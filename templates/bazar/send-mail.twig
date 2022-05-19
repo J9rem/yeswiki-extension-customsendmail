@@ -10,12 +10,12 @@
 
 {{ include_css('tools/bazar/libs/vendor/summernote/summernote.css') }}
 
-{% if not hasAcl("@admins") %}
+{% if not param.keepentrieswhereadminforparent and not hasAcl("@admins") %}
   {{ include("@templates/alert-message.twig",{type:"danger",message:"Template '#{_self}': " ~ _t('BAZ_NEED_ADMIN_RIGHTS')})}}
 {% else %}
+  {{ info_res|raw }}
   {% if fiches is not empty %}
-    {{ info_res }}
-    {{ pager_links }}
+    {{ pager_links|raw }}
     <form 
       id="frm{{ param.nbbazarliste }}" 
       action="{{ url({params:{}})}}"
@@ -138,7 +138,7 @@
         </div>
       </div>
     </form>
-    {{ pager_links }}
+    {{ pager_links|raw }}
   {% endif %}
 {% endif %}
 {{ include_javascript('tools/bazar/libs/vendor/summernote/summernote.min.js') }}

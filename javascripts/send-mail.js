@@ -1,3 +1,11 @@
+/*
+ * This file is part of the YesWiki Extension Customsendmail.
+ *
+ * Authors : see README.md file that was distributed with this source code.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 const SendMailHelper = {
   retrievingPreview: false,
   nextPreviewTobeRetrieved: false,
@@ -54,7 +62,7 @@ const SendMailHelper = {
         toastMessage(_t('CUSTOMSENDMAIL_EMAIL_SENT',{'details':data['sent for'] || ''}),1500,'alert alert-success')
       },
       error: function (e) {
-        toastMessage(_t('CUSTOMSENDMAIL_EMAIL_NOT_SENT',{'errorMsg':(e.responseJSON.error || '')}), 3000, "alert alert-danger");
+        toastMessage(_t('CUSTOMSENDMAIL_EMAIL_NOT_SENT',{'errorMsg':(e.responseJSON != undefined) ? (e.responseJSON.error || '') : ''}), 3000, "alert alert-danger");
       },
       complete: function (){
         $(elem).removeAttr('disabled');

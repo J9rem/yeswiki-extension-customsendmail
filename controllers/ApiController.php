@@ -1,5 +1,14 @@
 <?php
 
+/*
+ * This file is part of the YesWiki Extension Customsendmail.
+ *
+ * Authors : see README.md file that was distributed with this source code.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace YesWiki\Customsendmail\Controller;
 
 use Exception;
@@ -13,6 +22,7 @@ use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Bazar\Service\FormManager;
 use YesWiki\Core\ApiResponse;
 use YesWiki\Core\YesWikiController;
+use YesWiki\Customsendmail\Service\CustomSendMailService;
 
 class ApiController extends YesWikiController
 {
@@ -65,8 +75,17 @@ class ApiController extends YesWikiController
     public function sendmailApi()
     {
         $isAdmin = $this->wiki->UserIsAdmin();
-        $this->denyAccessUnlessAdmin();
+        $customSendMailService = $this->getService(CustomSendMailService::class);
+        if (!$isAdmin) {
+            $suffix = $customSendMailService->getAdminSuffix();
+            if (empty($suffix)) {
+                return new ApiResponse(['error' => '(only for admins)'], Response::HTTP_UNAUTHORIZED);
+            }
+        }
         $params = $this->getParams();
+        
+        $filteredContacts = $isAdmin ? $params['contacts']
+            : implode(',', array_keys($customSendMailService->filterEntriesAsParentAdminOrOwner(explode(',', $params['contacts']), false)));
 
         $startLink = preg_quote("<a", '/');
         $endStart = preg_quote(">", '/');
@@ -82,7 +101,7 @@ class ApiController extends YesWikiController
         $messageTxt = html_entity_decode($messageTxt);
         
         $emailfieldname = filter_input(INPUT_POST, 'emailfieldname', FILTER_SANITIZE_STRING);
-        $contacts = $this->getContacts($params['contacts'], $emailfieldname, $isAdmin);
+        $contacts = $this->getContacts($filteredContacts, $emailfieldname, $isAdmin);
         if ($params['addsendertocontact']) {
             $contacts['sender-email'] = $params['senderEmail'];
         }
@@ -95,7 +114,7 @@ class ApiController extends YesWikiController
         $error = false;
         try {
             if ($params['sendtogroup']) {
-                if ($this->sendMail($params['senderEmail'], $params['senderName'], $contacts, $repliesTo, $hiddenCopies, $params['subject'], $messageTxt, $params['message'])) {
+                if (!empty($contacts) && $this->sendMail($params['senderEmail'], $params['senderName'], $contacts, $repliesTo, $hiddenCopies, $params['subject'], $messageTxt, $params['message'])) {
                     $doneFor = array_merge($doneFor, array_keys($contacts));
                 } else {
                     $error = true;
@@ -137,37 +156,35 @@ class ApiController extends YesWikiController
         $formsCache = [];
         foreach ($contactsIds as $entryId) {
             if ($entryManager->isEntry($entryId)) {
-                if ($isAdmin) {
-                    $entry = $entryManager->getOne($entryId);
-                    if (!empty($entry['id_typeannonce']) && strval($entry['id_typeannonce']) == strval(intval($entry['id_typeannonce']))) {
-                        $formId = $entry['id_typeannonce'];
-                        if (!isset($formsCache[$formId])) {
-                            if (!empty($emailfieldname)) {
-                                $field = $formManager->findFieldFromNameOrPropertyName($emailfieldname, $formId);
-                                $formsCache[$formId] = [
-                                    'prepared' => empty($field) ? [] :[
-                                        $field
-                                    ]
-                                ];
-                            } else {
-                                $formsCache[$formId] = $formManager->getOne($formId);
-                            }
-                            if (!empty($formsCache[$formId]['prepared'])) {
-                                foreach ($formsCache[$formId]['prepared'] as $field) {
-                                    if ($field instanceof EmailField) {
-                                        $formsCache[$formId]['email field'] = $field;
-                                        break;
-                                    }
+                $entry = $entryManager->getOne($entryId, false, null, false, true);
+                if (!empty($entry['id_typeannonce']) && strval($entry['id_typeannonce']) == strval(intval($entry['id_typeannonce']))) {
+                    $formId = $entry['id_typeannonce'];
+                    if (!isset($formsCache[$formId])) {
+                        if (!empty($emailfieldname)) {
+                            $field = $formManager->findFieldFromNameOrPropertyName($emailfieldname, $formId);
+                            $formsCache[$formId] = [
+                                'prepared' => empty($field) ? [] :[
+                                    $field
+                                ]
+                            ];
+                        } else {
+                            $formsCache[$formId] = $formManager->getOne($formId);
+                        }
+                        if (!empty($formsCache[$formId]['prepared'])) {
+                            foreach ($formsCache[$formId]['prepared'] as $field) {
+                                if ($field instanceof EmailField) {
+                                    $formsCache[$formId]['email field'] = $field;
+                                    break;
                                 }
                             }
                         }
-                        if (!empty($formsCache[$formId]['email field']) &&
-                            !empty($entry[($formsCache[$formId]['email field'])->getPropertyName()])) {
-                            $email = $entry[($formsCache[$formId]['email field'])->getPropertyName()];
-                            $email = filter_var($email, FILTER_VALIDATE_EMAIL);
-                            if (!empty(trim($email))) {
-                                $contacts[$entryId] = $email;
-                            }
+                    }
+                    if (!empty($formsCache[$formId]['email field']) &&
+                        !empty($entry[($formsCache[$formId]['email field'])->getPropertyName()])) {
+                        $email = $entry[($formsCache[$formId]['email field'])->getPropertyName()];
+                        $email = filter_var($email, FILTER_VALIDATE_EMAIL);
+                        if (!empty(trim($email))) {
+                            $contacts[$entryId] = $email;
                         }
                     }
                 }
@@ -204,7 +221,7 @@ class ApiController extends YesWikiController
                 // 1 = client messages
                 // 2 = client and server messages
                 $mail->SMTPDebug = $this->wiki->config['contact_debug'];
-                //Ask for HTML-friendly debug output
+                //Ask for HTML-friendly debug output can be a function($str, $level)
                 $mail->Debugoutput = 'html';
                 //Set the hostname of the mail server
                 $mail->Host = $this->wiki->config['contact_smtp_host'];
@@ -254,7 +271,7 @@ class ApiController extends YesWikiController
             }
 
             foreach ($hiddenCopies as $contact) {
-                $mail->addBBC($contact, $contact);
+                $mail->addBCC($contact, $contact);
             }
             //Set the subject line
             $mail->Subject = $subject;

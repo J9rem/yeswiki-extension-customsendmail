@@ -28,6 +28,7 @@ return [
     'CUSTOMSENDMAIL_SENDMAIL_EMAILFIELDNAME_LABEL' => 'Champ pour l\'email',
     'CUSTOMSENDMAIL_SENDMAIL_DEFAULTCONTENT_LABEL' => 'Contenu par défaut',
     'CUSTOMSENDMAIL_SENDMAIL_DEFAULTCONTENT' => 'Bonjour,<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;----Complétez votre message ici----<br/>',
+    'CUSTOMSENDMAIL_SENDMAIL_KEEPENTRIESWHEREADMINFORPARENT_LABEL' => 'Conserver uniquement les fiches pour lesquelles l\'utilisateur est administrateur des fiches mères.',
 
     // templates/bazar/send-mail.twig
     'CUSTOMSENDMAIL_DEFAULT_TITLE' => 'Envoyer un e-mail à :',
