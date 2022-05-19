@@ -1,0 +1,19 @@
+<?php
+
+/*
+ * This file is part of the YesWiki Extension customsendmail.
+ *
+ * Authors : see README.md file that was distributed with this source code.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+
+$config = $this->wiki->services->get(ParameterBagInterface::class);
+$defaultSenderEmail = ($this->wiki->UserIsAdmin() && $config->has('default-sender-email')) ? $config->get('default-sender-email') : '';
+$defaultSenderEmail = is_string($defaultSenderEmail) ? trim($defaultSenderEmail) : '';
+$hasContactFrom = $config->has('contact_from');
+
+echo $this->render('@bazar/send-mail.twig',compact(['fiches','info_res','param','pager_links','filters','defaultSenderEmail','hasContactFrom']));

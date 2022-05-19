@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<plugin name="customsendmail" version="0.1" active="1">
+  <author>Jérémy Dufraisse</author>*
+  <label>Custom Sendmail</label>
+  <desc>Personnalisation pour l'envoi group� d'e-mail</desc>
+</plugin>

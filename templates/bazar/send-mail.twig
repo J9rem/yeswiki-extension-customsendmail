@@ -1,0 +1,145 @@
+
+{#
+ * This file is part of the YesWiki Extension customsendmail.
+ *
+ * Authors : see README.md file that was distributed with this source code.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *#}
+
+{{ include_css('tools/bazar/libs/vendor/summernote/summernote.css') }}
+
+{% if not hasAcl("@admins") %}
+  {{ include("@templates/alert-message.twig",{type:"danger",message:"Template '#{_self}': " ~ _t('BAZ_NEED_ADMIN_RIGHTS')})}}
+{% else %}
+  {% if fiches is not empty %}
+    {{ info_res }}
+    {{ pager_links }}
+    <form 
+      id="frm{{ param.nbbazarliste }}" 
+      action="{{ url({params:{}})}}"
+      method="post"
+      class="custom-sendmail-form">
+      <h4>{{ param.title|trim is not empty ? param.title : _t('CUSTOMSENDMAIL_DEFAULT_TITLE') }}</h4>
+      <div class="row">
+        <div class="col-xs-4">
+          <label class="no-dblclick">
+            <input type="checkbox" onclick="SendMailHelper.checkedAll();"> {{ _t('BAZAR_CHECKALL') }}
+          </label>
+          <br>
+          <br>
+          <ul class="list-unstyled">
+            {% for fiche in fiches %}
+              <li class="bazar-entry" style="margin-bottom:8px" {{ fiche.html_data|raw }}>
+                <label>
+                  <input 
+                    class="mail-checkbox" 
+                    type="checkbox" 
+                    name="contact[{{ param.nbbazarliste }}][]" 
+                    value="{{ fiche.id_fiche }}"> {{ fiche.bf_titre }} <a 
+                      class="btn btn-xs btn-default modalbox" 
+                      href="{{ url({tag:fiche.id_fiche}) }}"
+                      title="{{ fiche.bf_titre|e('html_attr') }}">
+                      <i class="glyphicon glyphicon-eye-open"></i>
+                  </a>
+                  <br>
+                  <small> {{ _t('CUSTOMSENDMAIL_LAST_UPDATE',{'date':fiche.date_maj_fiche|date("d.m.Y")}) }}</small>
+                </label>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="col-xs-8">
+          <div class="form-group">
+            <label>
+              <input 
+                type="checkbox" 
+                name="sendtogroup[{{ param.nbbazarliste }}]" 
+                value="1"><span></span>{{ _t('CUSTOMSENDMAIL_SENDTOGROUP') }}
+            </label>
+          </div>
+          <div class="form-group">
+            <label>
+              <input  
+                type="checkbox" 
+                name="addsendertocontact[{{ param.nbbazarliste }}]" 
+                value="1"><span></span>{{ _t('CUSTOMSENDMAIL_ADDSENDERTOCONTACT') }}
+            </label>
+          </div>
+          <div class="form-group">
+            <label>
+              <input  
+                type="checkbox" 
+                name="addsendertoreplyto[{{ param.nbbazarliste }}]" 
+                value="1"><span></span>{{ _t('CUSTOMSENDMAIL_ADDSENDERTOREPLYTO') }}
+            </label>
+          </div>
+          <div class="form-group">
+            <label>
+              <input  
+                type="checkbox" 
+                name="addcontactstoreplyto[{{ param.nbbazarliste }}]" 
+                value="1"><span></span>{{ _t('CUSTOMSENDMAIL_ADDCONTACTSTOREPLYTO') }}
+            </label>
+          </div>
+          <div class="form-group">
+            <label>
+              <input  
+                type="checkbox" 
+                name="receivehiddencopy[{{ param.nbbazarliste }}]" 
+                value="1"><span></span>{{ _t('CUSTOMSENDMAIL_RECEIVEHIDDENCOPY') }}
+            </label>
+          </div>
+          {% if hasContactFrom %}
+          <div class="form-group">
+            {{ include('@templates/alert-message.twig',{type:'info',message:_t('CUSTOMSENDMAIL_HASCONTACTFROM')|nl2br}) }}
+          </div>
+          {% endif %}
+          <div class="form-group">
+            <label>{{ _t('CUSTOMSENDMAIL_SENDERNAME') }}</label>
+            <input type="text" class="form-control" name="namesender[{{ param.nbbazarliste }}]"
+              value="{{ param.defaultsendername|trim is not empty ? param.defaultsendername : _t('CUSTOMSENDMAIL_SENDERNAME') }}">
+          </div>
+          <div class="form-group">
+            <label>{{ _t('CUSTOMSENDMAIL_SENDEREMAIL') }}</label>
+            <input type="email" class="form-control" name="mailsender[{{ param.nbbazarliste }}]" 
+            value="{{ defaultSenderEmail is not empty ? defaultSenderEmail : '' }}" required="true">
+          </div>
+          <div class="form-group">
+            <label>{{ _t('CUSTOMSENDMAIL_MESSAGE_SUBJECT') }}</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              name="subject[{{ param.nbbazarliste }}]" 
+              value="{{ param.defaultsubject|trim is not empty ? param.defaultsubject : '' }}" placeholder="{{ _t('CUSTOMSENDMAIL_MESSAGE_SUBJECT_PLACEHOLDER') }}" 
+              required="true">
+          </div>
+          {{ include("@bazar/inputs/textarea.twig",{
+            field: {
+              label: _t('CUSTOMSENDMAIL_MESSAGE'),
+              name: "message[#{ param.nbbazarliste }]",
+              syntax: "html",
+              numRows: 10,
+              type: "textarea"
+            },
+            value: (param.defaultcontent|trim is not empty ? param.defaultcontent|striptags('<br><p><hr><i><b><strong><em><div><span>') :_t('CUSTOMSENDMAIL_SENDMAIL_DEFAULTCONTENT'))|raw ,
+          }) }}
+          <div class="clearfix"></div>
+          <div class="form-group">{{ _t('CUSTOMSENDMAIL_HELP')|nl2br }}</div>
+          <button class="btn btn-xl btn-primary" onclick="SendMailHelper.sendEmail({{ param.nbbazarliste|json_encode }},'{{ param.emailfieldname }}')">{{ _t('CUSTOMSENDMAIL_SENDMAIL') }}</button>
+          <br/>
+          <div class="form-group well" style="min-height:300px;width:100%;">
+            <label>{{ _t('CUSTOMSENDMAIL_PREVIEW') }}</label><br>
+            <i>{{ _t('CUSTOMSENDMAIL_SIZE') }} <span id="customsendmailSize{{ param.nbbazarliste }}"></span></i>
+            <hr/>
+            <div id="customsendmailPreview{{ param.nbbazarliste }}"></div>
+          </div>
+        </div>
+      </div>
+    </form>
+    {{ pager_links }}
+  {% endif %}
+{% endif %}
+{{ include_javascript('tools/bazar/libs/vendor/summernote/summernote.min.js') }}
+{{ include_javascript('tools/customsendmail/javascripts/send-mail.js') }}
