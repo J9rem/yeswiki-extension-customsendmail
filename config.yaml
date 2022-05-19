@@ -1,3 +1,9 @@
+parameters:
+  GroupsAdminsSuffixForEmails: ''
+  default-sender-email: ''
+  customsendmail_editable_config_params:
+   - 'GroupsAdminsSuffixForEmails'
+   - 'default-sender-email'
 services:
   _defaults:
     autowire: true

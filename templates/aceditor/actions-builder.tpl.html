@@ -61,7 +61,8 @@ if (isset($data) &&
         !in_array('bazarcustomsendmail',$data['action_groups']['bazarliste']['actions']['commons']['properties']['showexportbuttons']['showExceptFor'])){
             $data['action_groups']['bazarliste']['actions']['commons']['properties']['showexportbuttons']['showExceptFor'][] =  'bazarcustomsendmail';
     }
-    if (isset($data['action_groups']['bazarliste']['actions']) &&
+    if (!empty($this->wiki->config['GroupsAdminsSuffixForEmails']) &&
+        isset($data['action_groups']['bazarliste']['actions']) &&
         isset($data['action_groups']['bazarliste']['actions']['commons']) &&
         isset($data['action_groups']['bazarliste']['actions']['commons']['properties'])){
         $data['action_groups']['bazarliste']['actions']['commons']['properties']['keepentrieswhereadminforparent'] = [
