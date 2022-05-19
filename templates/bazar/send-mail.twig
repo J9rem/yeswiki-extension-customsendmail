@@ -56,7 +56,8 @@
               <input 
                 type="checkbox" 
                 name="sendtogroup[{{ param.nbbazarliste }}]" 
-                value="1"><span></span>{{ _t('CUSTOMSENDMAIL_SENDTOGROUP') }}
+                value="1"
+                {% if not hasAcl("@admins") %}disabled{% endif %}><span></span>{{ _t('CUSTOMSENDMAIL_SENDTOGROUP') }}
             </label>
           </div>
           <div class="form-group">
@@ -80,7 +81,8 @@
               <input  
                 type="checkbox" 
                 name="addcontactstoreplyto[{{ param.nbbazarliste }}]" 
-                value="1"><span></span>{{ _t('CUSTOMSENDMAIL_ADDCONTACTSTOREPLYTO') }}
+                value="1"
+                {% if not hasAcl("@admins") %}disabled{% endif %}><span></span>{{ _t('CUSTOMSENDMAIL_ADDCONTACTSTOREPLYTO') }}
             </label>
           </div>
           <div class="form-group">

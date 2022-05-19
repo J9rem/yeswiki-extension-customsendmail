@@ -31,7 +31,7 @@ class ApiController extends YesWikiController
      */
     public function previewEmail()
     {
-        extract($this->getParams());
+        extract($this->getParams($this->wiki->UserIsAdmin()));
         if ($addsendertocontact) {
             $contacts = (empty($contacts) ? '' : "$contacts,").$senderEmail;
         }
@@ -82,7 +82,7 @@ class ApiController extends YesWikiController
                 return new ApiResponse(['error' => '(only for admins)'], Response::HTTP_UNAUTHORIZED);
             }
         }
-        $params = $this->getParams();
+        $params = $this->getParams($isAdmin);
         
         $filteredContacts = $isAdmin ? $params['contacts']
             : implode(',', array_keys($customSendMailService->filterEntriesAsParentAdminOrOwner(explode(',', $params['contacts']), false)));
@@ -302,7 +302,7 @@ class ApiController extends YesWikiController
         }
     }
 
-    private function getParams(): array
+    private function getParams(bool $isAdmin): array
     {
         $message = (isset($_POST['message']) && is_string($_POST['message'])) ? $_POST['message'] : '';
         $senderName = filter_input(INPUT_POST, 'senderName', FILTER_SANITIZE_STRING);
@@ -310,9 +310,9 @@ class ApiController extends YesWikiController
         $subject = filter_input(INPUT_POST, 'subject', FILTER_SANITIZE_STRING);
         $contacts = filter_input(INPUT_POST, 'contacts', FILTER_SANITIZE_STRING);
         $addsendertocontact = filter_input(INPUT_POST, 'addsendertocontact', FILTER_VALIDATE_BOOL);
-        $sendtogroup = filter_input(INPUT_POST, 'sendtogroup', FILTER_VALIDATE_BOOL);
+        $sendtogroup = $isAdmin && filter_input(INPUT_POST, 'sendtogroup', FILTER_VALIDATE_BOOL);
         $addsendertoreplyto = filter_input(INPUT_POST, 'addsendertoreplyto', FILTER_VALIDATE_BOOL);
-        $addcontactstoreplyto = filter_input(INPUT_POST, 'addcontactstoreplyto', FILTER_VALIDATE_BOOL);
+        $addcontactstoreplyto = $isAdmin && filter_input(INPUT_POST, 'addcontactstoreplyto', FILTER_VALIDATE_BOOL);
         $receivehiddencopy = filter_input(INPUT_POST, 'receivehiddencopy', FILTER_VALIDATE_BOOL);
         return compact(['message','senderName','senderEmail','subject','contacts','addsendertocontact','sendtogroup','addsendertoreplyto','addcontactstoreplyto','receivehiddencopy']);
     }
