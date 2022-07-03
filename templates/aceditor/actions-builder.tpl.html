@@ -9,8 +9,6 @@
  * file that was distributed with this source code.
  */
 
-use YesWiki\Core\Service\AssetsManager;
-
 if (isset($data) &&
     isset($data['action_groups']) &&
     isset($data['action_groups']['bazarliste'])){
@@ -53,6 +51,14 @@ if (isset($data) &&
             ],
         ];
     }
+    
+    if (isset($data['action_groups']['bazarliste']['actions']) &&
+        isset($data['action_groups']['bazarliste']['actions']['bazartableau'])){
+        $data['action_groups']['bazarliste']['actions']['bazartableauwithemail'] = $data['action_groups']['bazarliste']['actions']['bazartableau'];
+        $data['action_groups']['bazarliste']['actions']['bazartableauwithemail']['label'] = 
+            _t('AB_BAZARTABLEAU_WITH_EMAIL_LABEL');
+            $data['action_groups']['bazarliste']['actions']['bazartableauwithemail']['properties']['template']['value'] = 'tableau-with-email.tpl.html';
+    }
     if (isset($data['action_groups']['bazarliste']['actions']) &&
         isset($data['action_groups']['bazarliste']['actions']['commons']) &&
         isset($data['action_groups']['bazarliste']['actions']['commons']['properties']) &&
@@ -65,11 +71,26 @@ if (isset($data) &&
         isset($data['action_groups']['bazarliste']['actions']) &&
         isset($data['action_groups']['bazarliste']['actions']['commons']) &&
         isset($data['action_groups']['bazarliste']['actions']['commons']['properties'])){
-        $data['action_groups']['bazarliste']['actions']['commons']['properties']['keepentrieswhereadminforparent'] = [
-            'label' => _t('CUSTOMSENDMAIL_SENDMAIL_KEEPENTRIESWHEREADMINFORPARENT_LABEL'),
-            'type' => 'checkbox',
-            'default' => 'false',
+        $data['action_groups']['bazarliste']['actions']['commons']['properties']['selectmembers'] = [
+            'label' => _t('CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_LABEL'),
+            'hint' => _t('CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_HINT'),
+            'type' => 'list',
+            'default' => '',
             'advanced' => true,
+            'options' => [
+                'only_members' => _t('CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_ONLY_MEMBERS'),
+                'members_and_profiles_in_area' => _t('CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_BY_AREA'),
+            ],
+        ];
+        $data['action_groups']['bazarliste']['actions']['commons']['properties']['selectmembersparentform'] = [
+            'label' => _t('CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERSPARENT_FORM_LABEL'),
+            'type' => 'number',
+            'advanced' => true,
+            'required' => true,
+            'min' => 1,
+            'showif' => [
+                'selectmembers' => 'members_and_profiles_in_area' ,
+            ],
         ];
     }
 }

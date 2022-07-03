@@ -85,7 +85,7 @@ class ApiController extends YesWikiController
         $params = $this->getParams($isAdmin);
         
         $filteredContacts = $isAdmin ? $params['contacts']
-            : implode(',', array_keys($customSendMailService->filterEntriesAsParentAdminOrOwner(explode(',', $params['contacts']), false)));
+            : implode(',', array_keys($customSendMailService->filterEntriesFromParents(explode(',', $params['contacts']), false, "only_members")));
 
         $startLink = preg_quote("<a", '/');
         $endStart = preg_quote(">", '/');

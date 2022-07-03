@@ -20,9 +20,21 @@ class __BazarListeAction extends YesWikiAction
 {
     public function formatArguments($arg)
     {
-        $query = $this->getService(EntryController::class)->formatQuery($arg, $_GET);
-        if (!$this->wiki->UserIsAdmin() && $this->formatBoolean($arg, false, 'keepentrieswhereadminforparent')) {
-            $customSendMailService = $this->getService(CustomSendMailService::class);
+        // get services
+        $customSendMailService = $this->getService(CustomSendMailService::class);
+        $entryController = $this->getService(EntryController::class);
+        $entryManager = $this->getService(EntryManager::class);
+
+        $query = $entryController->formatQuery($arg, $_GET);
+        $selectmembers = (
+            !empty($arg['selectmembers']) &&
+                in_array($arg['selectmembers'], ["only_members","members_and_profiles_in_area"], true)
+        ) ? $arg['selectmembers'] : "";
+        $selectmembersparentform = (
+            !empty($arg['selectmembersparentform']) &&
+                strval($arg['selectmembersparentform']) == strval(intval($arg['selectmembersparentform']))
+        ) ? $arg['selectmembersparentform'] : "";
+        if (!$this->wiki->UserIsAdmin() && !empty($selectmembers)) {
             $ids = $arg['id'] ?? null;
             if (empty($customSendMailService->getAdminSuffix()) || empty($ids)) {
                 $query['id_fiche'] = "";
@@ -33,10 +45,10 @@ class __BazarListeAction extends YesWikiAction
                 if (empty($ids)) {
                     $query['id_fiche'] = "";
                 } else {
-                    $entries = $this->getService(EntryManager::class)->search([
+                    $entries = $entryManager->search([
                         'formsIds' => $ids
                     ], true, true);
-                    $entries = $customSendMailService->filterEntriesAsParentAdminOrOwner($entries);
+                    $entries = $customSendMailService->filterEntriesFromParents($entries, true, $selectmembers, $selectmembersparentform);
                     $query['id_fiche'] = implode(',', array_keys($entries));
                 }
             }

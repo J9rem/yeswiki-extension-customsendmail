@@ -10,7 +10,7 @@
 
 {{ include_css('tools/bazar/libs/vendor/summernote/summernote.css') }}
 
-{% if not param.keepentrieswhereadminforparent and not hasAcl("@admins") %}
+{% if param.selectmembers is empty and not hasAcl("@admins") %}
   {{ include("@templates/alert-message.twig",{type:"danger",message:"Template '#{_self}': " ~ _t('BAZ_NEED_ADMIN_RIGHTS')})}}
 {% else %}
   {{ info_res|raw }}

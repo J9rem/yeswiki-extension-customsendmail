@@ -12,7 +12,9 @@
 namespace YesWiki\Customsendmail\Service;
 
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use YesWiki\Bazar\Field\CheckboxField;
 use YesWiki\Bazar\Field\CheckboxEntryField;
+use YesWiki\Bazar\Field\EnumField;
 use YesWiki\Bazar\Field\RadioEntryField;
 use YesWiki\Bazar\Field\SelectEntryField;
 use YesWiki\Bazar\Service\EntryManager;
@@ -56,8 +58,16 @@ class CustomSendMailService
         return (empty($suffix) || !is_string($suffix)) ? "" : $suffix;
     }
 
-    public function filterEntriesAsParentAdminOrOwner(array $entries, bool $entriesMode = true)
+    public function getAreaFieldName(): string
     {
+        $fieldName = !$this->params->has('AreaFieldName') ? "" : $this->params->get('AreaFieldName');
+        return (empty($fieldName) || !is_string($fieldName)) ? "" : $fieldName;
+    }
+
+    public function filterEntriesFromParents(array $entries, bool $entriesMode = true, string $mode = "only_members", string $selectmembersparentform = "")
+    {
+        $cacheParents = [];
+        $entryCache = [];
         if ($this->wiki->UserIsAdmin()) {
             return $entries;
         } else {
@@ -68,46 +78,152 @@ class CustomSendMailService
                 $user = $this->userManager->getLoggedUser();
                 if (empty($user['name'])) {
                     return [];
-                } else {
-                    $results = [];
-                    foreach ($entries as $key => $value) {
-                        if ($entriesMode) {
-                            $entry = $value;
-                        } elseif ($this->entryManager->isEntry($value)) {
-                            $entry = $this->entryManager->getOne($value);
+                }
+                if ($mode == "members_and_profiles_in_area") {
+                    $areaFieldName = $this->getAreaFieldName();
+                    if (empty($areaFieldName) || empty($selectmembersparentform)) {
+                        return [];
+                    } else {
+                        $fieldForArea = $this->formManager->findFieldFromNameOrPropertyName($areaFieldName,$selectmembersparentform);
+                        if (empty($fieldForArea) || !($fieldForArea instanceof EnumField)){
+                            return [];
                         }
-                        if (!empty($entry['id_typeannonce'])) {
-                            $formId = $entry['id_typeannonce'];
-                            $form = $this->formManager->getOne($formId);
-                            if (!empty($form['prepared'])) {
-                                foreach ($form['prepared'] as $field) {
-                                    if ($field instanceof CheckboxEntryField ||
-                                        $field instanceof RadioEntryField ||
-                                        $field instanceof SelectEntryField) {
-                                        $parentEntries = ($field instanceof CheckboxEntryField)
-                                            ? $field->getValues($entry)
-                                            : [$field->getValue($entry)];
-                                        foreach ($parentEntries as $parentEntry) {
-                                            if ($this->entryManager->isEntry($parentEntry)) {
-                                                $parentOwner = $this->pageManager->getOwner($parentEntry);
-                                                $groupName = "{$parentEntry}$suffix";
-                                                $groupAcl = $this->wiki->GetGroupACL($groupName);
-                                                if ((!empty($parentOwner) && $parentOwner == $user['name']) ||
-                                                    (!empty($groupAcl) && $this->aclService->check($groupAcl, $user['name'], true))) {
-                                                    if (!in_array($entry['id_fiche'], array_keys($results))) {
-                                                        $results[$entry['id_fiche']] = $entry;
-                                                    }
-                                                    break;
-                                                }
-                                            }
+                        $parentsWhereAdmin = $this->getParentsWhereAdmin($selectmembersparentform,$cacheParents,$entryCache, $suffix, $user['name']);
+                        $areas = [];
+                        foreach ($parentsWhereAdmin as $idFiche => $entry) {
+                            if ($fieldForArea instanceof CheckboxField){
+                                $newAreas = $fieldForArea->getValues($entry);
+                            } else {
+                                $newAreas = !empty($entry[$fieldForArea->getPropertyName()]) ? [$entry[$fieldForArea->getPropertyName()]] : [];
+                            }
+                            foreach ($newAreas as $area) {
+                                if (!in_array($area,$areas)){
+                                    $areas[] = $area;
+                                }
+                            }
+                        }
+                    }
+                }
+                $results = [];
+                foreach ($entries as $key => $value) {
+                    if ($entriesMode) {
+                        $entry = $value;
+                    } elseif ($this->entryManager->isEntry($value)) {
+                        $entry = $this->entryManager->getOne($value);
+                    }
+                    if (!empty($entry['id_typeannonce'])) {
+                        $formId = $entry['id_typeannonce'];
+                        $form = $this->formManager->getOne($formId);
+                        if (!empty($form['prepared'])) {
+                            foreach ($form['prepared'] as $field) {
+                                if ($this->isAdminOfParent($entry,[$field], $entryCache, $suffix ,$user['name'])){
+                                    if (!in_array($entry['id_fiche'], array_keys($results))) {
+                                        $results[$entry['id_fiche']] = $entry;
+                                    }
+                                }
+                                if ($mode == "members_and_profiles_in_area" &&
+                                    !in_array($entry['id_fiche'], array_keys($results)) && 
+                                    $field instanceof EnumField &&
+                                    $field->getLinkedObjectName() == $fieldForArea->getLinkedObjectName()){
+                                    if ($field instanceof CheckboxField){
+                                        $currentAreas = $field->getValues($entry);
+                                    } else {
+                                        $currentAreas = !empty($entry[$field->getPropertyName()]) ? [$entry[$field->getPropertyName()]] : [];
+                                    }
+                                    foreach ($currentAreas as $area) {
+                                        if (in_array($area,$areas)){
+                                            $results[$entry['id_fiche']] = $entry;
+                                            break;
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                    return $results;
                 }
+                return $results;
+            }
+        }
+    }
+
+    public function isAdminOfParent(array $entry, array $fields, array &$cache = [], string $suffix = "" ,string $loggedUserName = ""): bool
+    {
+        if (empty($suffix)){
+            $suffix = $this->getAdminSuffix();
+            if (empty($suffix)) {
+                return false;
+            }
+        }
+        if (empty($loggedUserName)){
+            $user = $this->userManager->getLoggedUser();
+            if (empty($user['name'])) {
+                return false;
+            } else {
+                $loggedUserName = $user['name'];
+            }
+        }
+        foreach ($fields as $field) {
+            if ($field instanceof CheckboxEntryField ||
+                    $field instanceof RadioEntryField ||
+                    $field instanceof SelectEntryField) {
+                $parentEntries = ($field instanceof CheckboxEntryField)
+                ? $field->getValues($entry)
+                : [$field->getValue($entry)];
+                foreach ($parentEntries as $parentEntry) {
+                    if ($this->isParentAdmin($parentEntry,$suffix,$loggedUserName,$cache)){
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private function getParentsWhereAdmin(string $id, array &$cache, array &$entryCache, string $suffix, string $loggedUserName): array
+    {
+        if (empty($cache[$id])){
+            $cache[$id] = [];
+        }
+        if (empty($cache[$id]['entries'])) {
+            $cache[$id]['entries'] = $this->entryManager->search([
+                    'formsIds' => [$id]
+                ], true, true);
+        }
+        if (empty($cache[$id]['entries_where_admin'])){
+            $cache[$id]['entries_where_admin'] = array_filter($cache[$id]['entries'],function ($entry) use ($suffix, $loggedUserName, &$entryCache){
+                return $this->isParentAdmin($entry['id_fiche'], $suffix, $loggedUserName, $entryCache);
+            });
+        }
+        return $cache[$id]['entries_where_admin'];
+    }
+
+    private function isParentAdmin(string $entryId, string $suffix, string $loggedUserName, array &$cache): bool
+    {
+        if (empty($cache['isAdmin'])){
+            $cache['isAdmin'] = [];
+        }
+        if (empty($cache['isNotAdmin'])){
+            $cache['isNotAdmin'] = [];
+        }
+        if (in_array($entryId,$cache['isAdmin'])){
+            return true;
+        } elseif (in_array($entryId,$cache['isNotAdmin'])){
+            return false;
+        } else {
+            if (!$this->entryManager->isEntry($entryId)){
+                $cache['isNotAdmin'][] = $entryId;
+                return false;
+            }
+            $parentOwner = $this->pageManager->getOwner($entryId);
+            $groupName = "{$entryId}$suffix";
+            $groupAcl = $this->wiki->GetGroupACL($groupName);
+            if ((!empty($parentOwner) && $parentOwner == $loggedUserName) ||
+                (!empty($groupAcl) && $this->aclService->check($groupAcl, $loggedUserName, true))){
+                $cache['isAdmin'][] = $entryId;
+                return true;
+            } else {
+                $cache['isNotAdmin'][] = $entryId;
+                return false;
             }
         }
     }

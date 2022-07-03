@@ -1,9 +1,11 @@
 parameters:
   GroupsAdminsSuffixForEmails: ''
   default-sender-email: ''
+  AreaFieldName: ''
   customsendmail_editable_config_params:
    - 'GroupsAdminsSuffixForEmails'
    - 'default-sender-email'
+   - 'AreaFieldName'
 services:
   _defaults:
     autowire: true

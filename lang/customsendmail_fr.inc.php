@@ -33,7 +33,12 @@ return [
     'CUSTOMSENDMAIL_SENDMAIL_EMAILFIELDNAME_LABEL' => 'Champ pour l\'email',
     'CUSTOMSENDMAIL_SENDMAIL_DEFAULTCONTENT_LABEL' => 'Contenu par défaut',
     'CUSTOMSENDMAIL_SENDMAIL_DEFAULTCONTENT' => 'Bonjour,<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;----Complétez votre message ici----<br/>',
-    'CUSTOMSENDMAIL_SENDMAIL_KEEPENTRIESWHEREADMINFORPARENT_LABEL' => 'Conserver uniquement les fiches pour lesquelles l\'utilisateur est administrateur des fiches mères.',
+    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_LABEL' => 'Filtrer les fiches',
+    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_HINT' => 'Filtre à partir des fiches mères (strucutres) où je suis administrateur',
+    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_ONLY_MEMBERS' => 'Uniquement les membres',
+    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_BY_AREA' => 'Membres ET profiles de la zone géographique',
+    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERSPARENT_FORM_LABEL' => 'Formulaire parent',
+    'AB_BAZARTABLEAU_WITH_EMAIL_LABEL' => 'Tableau avec e-mails',
 
     // templates/bazar/send-mail.twig
     'CUSTOMSENDMAIL_DEFAULT_TITLE' => 'Envoyer un e-mail à :',
