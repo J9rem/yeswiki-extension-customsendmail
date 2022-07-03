@@ -84,20 +84,20 @@ class CustomSendMailService
                     if (empty($areaFieldName) || empty($selectmembersparentform)) {
                         return [];
                     } else {
-                        $fieldForArea = $this->formManager->findFieldFromNameOrPropertyName($areaFieldName,$selectmembersparentform);
-                        if (empty($fieldForArea) || !($fieldForArea instanceof EnumField)){
+                        $fieldForArea = $this->formManager->findFieldFromNameOrPropertyName($areaFieldName, $selectmembersparentform);
+                        if (empty($fieldForArea) || !($fieldForArea instanceof EnumField)) {
                             return [];
                         }
-                        $parentsWhereAdmin = $this->getParentsWhereAdmin($selectmembersparentform,$cacheParents,$entryCache, $suffix, $user['name']);
+                        $parentsWhereAdmin = $this->getParentsWhereAdmin($selectmembersparentform, $cacheParents, $entryCache, $suffix, $user['name']);
                         $areas = [];
                         foreach ($parentsWhereAdmin as $idFiche => $entry) {
-                            if ($fieldForArea instanceof CheckboxField){
+                            if ($fieldForArea instanceof CheckboxField) {
                                 $newAreas = $fieldForArea->getValues($entry);
                             } else {
                                 $newAreas = !empty($entry[$fieldForArea->getPropertyName()]) ? [$entry[$fieldForArea->getPropertyName()]] : [];
                             }
                             foreach ($newAreas as $area) {
-                                if (!in_array($area,$areas)){
+                                if (!in_array($area, $areas)) {
                                     $areas[] = $area;
                                 }
                             }
@@ -116,22 +116,22 @@ class CustomSendMailService
                         $form = $this->formManager->getOne($formId);
                         if (!empty($form['prepared'])) {
                             foreach ($form['prepared'] as $field) {
-                                if ($this->isAdminOfParent($entry,[$field], $entryCache, $suffix ,$user['name'])){
+                                if ($this->isAdminOfParent($entry, [$field], $entryCache, $suffix, $user['name'])) {
                                     if (!in_array($entry['id_fiche'], array_keys($results))) {
                                         $results[$entry['id_fiche']] = $entry;
                                     }
                                 }
                                 if ($mode == "members_and_profiles_in_area" &&
-                                    !in_array($entry['id_fiche'], array_keys($results)) && 
+                                    !in_array($entry['id_fiche'], array_keys($results)) &&
                                     $field instanceof EnumField &&
-                                    $field->getLinkedObjectName() == $fieldForArea->getLinkedObjectName()){
-                                    if ($field instanceof CheckboxField){
+                                    $field->getLinkedObjectName() == $fieldForArea->getLinkedObjectName()) {
+                                    if ($field instanceof CheckboxField) {
                                         $currentAreas = $field->getValues($entry);
                                     } else {
                                         $currentAreas = !empty($entry[$field->getPropertyName()]) ? [$entry[$field->getPropertyName()]] : [];
                                     }
                                     foreach ($currentAreas as $area) {
-                                        if (in_array($area,$areas)){
+                                        if (in_array($area, $areas)) {
                                             $results[$entry['id_fiche']] = $entry;
                                             break;
                                         }
@@ -146,15 +146,15 @@ class CustomSendMailService
         }
     }
 
-    public function isAdminOfParent(array $entry, array $fields, array &$cache = [], string $suffix = "" ,string $loggedUserName = ""): bool
+    public function isAdminOfParent(array $entry, array $fields, array &$cache = [], string $suffix = "", string $loggedUserName = ""): bool
     {
-        if (empty($suffix)){
+        if (empty($suffix)) {
             $suffix = $this->getAdminSuffix();
             if (empty($suffix)) {
                 return false;
             }
         }
-        if (empty($loggedUserName)){
+        if (empty($loggedUserName)) {
             $user = $this->userManager->getLoggedUser();
             if (empty($user['name'])) {
                 return false;
@@ -170,7 +170,7 @@ class CustomSendMailService
                 ? $field->getValues($entry)
                 : [$field->getValue($entry)];
                 foreach ($parentEntries as $parentEntry) {
-                    if ($this->isParentAdmin($parentEntry,$suffix,$loggedUserName,$cache)){
+                    if ($this->isParentAdmin($parentEntry, $suffix, $loggedUserName, $cache)) {
                         return true;
                     }
                 }
@@ -181,7 +181,7 @@ class CustomSendMailService
 
     private function getParentsWhereAdmin(string $id, array &$cache, array &$entryCache, string $suffix, string $loggedUserName): array
     {
-        if (empty($cache[$id])){
+        if (empty($cache[$id])) {
             $cache[$id] = [];
         }
         if (empty($cache[$id]['entries'])) {
@@ -189,8 +189,8 @@ class CustomSendMailService
                     'formsIds' => [$id]
                 ], true, true);
         }
-        if (empty($cache[$id]['entries_where_admin'])){
-            $cache[$id]['entries_where_admin'] = array_filter($cache[$id]['entries'],function ($entry) use ($suffix, $loggedUserName, &$entryCache){
+        if (empty($cache[$id]['entries_where_admin'])) {
+            $cache[$id]['entries_where_admin'] = array_filter($cache[$id]['entries'], function ($entry) use ($suffix, $loggedUserName, &$entryCache) {
                 return $this->isParentAdmin($entry['id_fiche'], $suffix, $loggedUserName, $entryCache);
             });
         }
@@ -199,18 +199,18 @@ class CustomSendMailService
 
     private function isParentAdmin(string $entryId, string $suffix, string $loggedUserName, array &$cache): bool
     {
-        if (empty($cache['isAdmin'])){
+        if (empty($cache['isAdmin'])) {
             $cache['isAdmin'] = [];
         }
-        if (empty($cache['isNotAdmin'])){
+        if (empty($cache['isNotAdmin'])) {
             $cache['isNotAdmin'] = [];
         }
-        if (in_array($entryId,$cache['isAdmin'])){
+        if (in_array($entryId, $cache['isAdmin'])) {
             return true;
-        } elseif (in_array($entryId,$cache['isNotAdmin'])){
+        } elseif (in_array($entryId, $cache['isNotAdmin'])) {
             return false;
         } else {
-            if (!$this->entryManager->isEntry($entryId)){
+            if (!$this->entryManager->isEntry($entryId)) {
                 $cache['isNotAdmin'][] = $entryId;
                 return false;
             }
@@ -218,7 +218,7 @@ class CustomSendMailService
             $groupName = "{$entryId}$suffix";
             $groupAcl = $this->wiki->GetGroupACL($groupName);
             if ((!empty($parentOwner) && $parentOwner == $loggedUserName) ||
-                (!empty($groupAcl) && $this->aclService->check($groupAcl, $loggedUserName, true))){
+                (!empty($groupAcl) && $this->aclService->check($groupAcl, $loggedUserName, true))) {
                 $cache['isAdmin'][] = $entryId;
                 return true;
             } else {
