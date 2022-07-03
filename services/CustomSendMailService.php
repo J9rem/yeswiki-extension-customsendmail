@@ -187,7 +187,7 @@ class CustomSendMailService
         if (empty($cache[$id]['entries'])) {
             $cache[$id]['entries'] = $this->entryManager->search([
                     'formsIds' => [$id]
-                ], true, true);
+                ], true, false);
         }
         if (empty($cache[$id]['entries_where_admin'])) {
             $cache[$id]['entries_where_admin'] = array_filter($cache[$id]['entries'], function ($entry) use ($suffix, $loggedUserName, &$entryCache) {
