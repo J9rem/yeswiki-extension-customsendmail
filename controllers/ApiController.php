@@ -100,7 +100,8 @@ class ApiController extends YesWikiController
         $messageTxt = preg_replace("/{$startP}[^>]*{$endStart}([^<]*){$endP}/", "$1\n", $messageTxt);
         $messageTxt = html_entity_decode($messageTxt);
         
-        $emailfieldname = filter_input(INPUT_POST, 'emailfieldname', FILTER_SANITIZE_STRING);
+        $emailfieldname = filter_input(INPUT_POST, 'emailfieldname', FILTER_UNSAFE_RAW);
+        $emailfieldname = ($emailfieldname === false) ? "" : htmlspecialchars(strip_tags($emailfieldname));
         $contacts = $this->getContacts($filteredContacts, $emailfieldname, $isAdmin);
         if ($params['addsendertocontact']) {
             $contacts['sender-email'] = $params['senderEmail'];
@@ -305,10 +306,13 @@ class ApiController extends YesWikiController
     private function getParams(bool $isAdmin): array
     {
         $message = (isset($_POST['message']) && is_string($_POST['message'])) ? $_POST['message'] : '';
-        $senderName = filter_input(INPUT_POST, 'senderName', FILTER_SANITIZE_STRING);
+        $senderName = filter_input(INPUT_POST, 'senderName', FILTER_UNSAFE_RAW);
+        $senderName = ($senderName === false) ? "" : htmlspecialchars(strip_tags($senderName));
         $senderEmail = filter_input(INPUT_POST, 'senderEmail', FILTER_VALIDATE_EMAIL);
-        $subject = filter_input(INPUT_POST, 'subject', FILTER_SANITIZE_STRING);
-        $contacts = filter_input(INPUT_POST, 'contacts', FILTER_SANITIZE_STRING);
+        $subject = filter_input(INPUT_POST, 'subject', FILTER_UNSAFE_RAW);
+        $subject = ($subject === false) ? "" : htmlspecialchars(strip_tags($subject));
+        $contacts = filter_input(INPUT_POST, 'contacts', FILTER_UNSAFE_RAW);
+        $contacts = ($contacts === false) ? "" : htmlspecialchars(strip_tags($contacts));
         $addsendertocontact = filter_input(INPUT_POST, 'addsendertocontact', FILTER_VALIDATE_BOOL);
         $sendtogroup = $isAdmin && filter_input(INPUT_POST, 'sendtogroup', FILTER_VALIDATE_BOOL);
         $addsendertoreplyto = filter_input(INPUT_POST, 'addsendertoreplyto', FILTER_VALIDATE_BOOL);
