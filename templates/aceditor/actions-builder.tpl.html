@@ -8,92 +8,11 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+use YesWiki\Aceditor\Service\ActionsBuilderService;
 
-if (isset($data) &&
-    isset($data['action_groups']) &&
-    isset($data['action_groups']['bazarliste'])){
-    if (isset($data['action_groups']['bazarliste']['actions']) &&
-        !isset($data['action_groups']['bazarliste']['actions']['bazarcustomsendmail'])){
-        $data['action_groups']['bazarliste']['actions']['bazarcustomsendmail'] = [
-            'label' => _t('CUSTOMSENDMAIL_SENDMAIL_LABEL'),
-            'description' => _t('CUSTOMSENDMAIL_SENDMAIL_DESCRIPTION'),
-            'width' => '35%',
-            'properties' => [
-                'template' => [
-                    'value' => 'send-mail.tpl.html',
-                ],
-                'title' => [
-                    'label' => _t('CUSTOMSENDMAIL_SENDMAIL_TITLE_LABEL'),
-                    'hint' => _t('CUSTOMSENDMAIL_SENDMAIL_TITLE_EMPTY_LABEL',['emptyVal' => _t('CUSTOMSENDMAIL_DEFAULT_TITLE')]),
-                    'type' => 'text',
-                    'default' => _t('CUSTOMSENDMAIL_DEFAULT_TITLE'),
-                ],
-                'defaultsendername' => [
-                    'label' => _t('CUSTOMSENDMAIL_SENDMAIL_DEFAULT_SENDERNAME_LABEL'),
-                    'type' => 'text',
-                    'default' => _t('CUSTOMSENDMAIL_SENDERNAME'),
-                ],
-                'defaultsubject' => [
-                    'label' => _t('CUSTOMSENDMAIL_SENDMAIL_DEFAULT_SUBJECT_LABEL'),
-                    'type' => 'text',
-                    'default' => '',
-                ],
-                'emailfieldname' => [
-                    'label' => _t('CUSTOMSENDMAIL_SENDMAIL_EMAILFIELDNAME_LABEL'),
-                    'type' => 'form-field',
-                    'default' => 'bf_mail',
-                ],
-                'defaultcontent' => [
-                    'label' => _t('CUSTOMSENDMAIL_SENDMAIL_DEFAULTCONTENT_LABEL'),
-                    'type' => 'text',
-                    'default' => _t('CUSTOMSENDMAIL_SENDMAIL_DEFAULTCONTENT'),
-                ],
-            ],
-        ];
-    }
-    
-    if (isset($data['action_groups']['bazarliste']['actions']) &&
-        isset($data['action_groups']['bazarliste']['actions']['bazartableau'])){
-        $data['action_groups']['bazarliste']['actions']['bazartableauwithemail'] = $data['action_groups']['bazarliste']['actions']['bazartableau'];
-        $data['action_groups']['bazarliste']['actions']['bazartableauwithemail']['label'] = 
-            _t('AB_BAZARTABLEAU_WITH_EMAIL_LABEL');
-            $data['action_groups']['bazarliste']['actions']['bazartableauwithemail']['properties']['template']['value'] = 'tableau-with-email.tpl.html';
-    }
-    if (isset($data['action_groups']['bazarliste']['actions']) &&
-        isset($data['action_groups']['bazarliste']['actions']['commons']) &&
-        isset($data['action_groups']['bazarliste']['actions']['commons']['properties']) &&
-        isset($data['action_groups']['bazarliste']['actions']['commons']['properties']['showexportbuttons']) &&
-        isset($data['action_groups']['bazarliste']['actions']['commons']['properties']['showexportbuttons']['showExceptFor']) &&
-        !in_array('bazarcustomsendmail',$data['action_groups']['bazarliste']['actions']['commons']['properties']['showexportbuttons']['showExceptFor'])){
-            $data['action_groups']['bazarliste']['actions']['commons']['properties']['showexportbuttons']['showExceptFor'][] =  'bazarcustomsendmail';
-    }
-    if (!empty($this->wiki->config['GroupsAdminsSuffixForEmails']) &&
-        isset($data['action_groups']['bazarliste']['actions']) &&
-        isset($data['action_groups']['bazarliste']['actions']['commons']) &&
-        isset($data['action_groups']['bazarliste']['actions']['commons']['properties'])){
-        $data['action_groups']['bazarliste']['actions']['commons']['properties']['selectmembers'] = [
-            'label' => _t('CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_LABEL'),
-            'hint' => _t('CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_HINT'),
-            'type' => 'list',
-            'default' => '',
-            'advanced' => true,
-            'options' => [
-                'only_members' => _t('CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_ONLY_MEMBERS'),
-                'members_and_profiles_in_area' => _t('CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_BY_AREA'),
-            ],
-        ];
-        $data['action_groups']['bazarliste']['actions']['commons']['properties']['selectmembersparentform'] = [
-            'label' => _t('CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERSPARENT_FORM_LABEL'),
-            'type' => 'number',
-            'advanced' => true,
-            'required' => true,
-            'min' => 1,
-            'showif' => [
-                'selectmembers' => 'members_and_profiles_in_area' ,
-            ],
-        ];
-    }
-}
+$actionsBuilderService = $this->wiki->services->get(ActionsBuilderService::class);
+$actionsBuilderService->setPreviousData($data ?? null);
+$data = $actionsBuilderService->getData();
 
 $paths = $this->twigLoader->getPaths("aceditor");
 $curExtDirName = basename(dirname(dirname(dirname(__FILE__))));
