@@ -168,7 +168,11 @@ class CustomSendMailService
                     $field instanceof SelectEntryField) {
                 $parentEntries = ($field instanceof CheckboxEntryField)
                 ? $field->getValues($entry)
-                : [$field->getValue($entry)];
+                : (
+                    !empty($entry[$field->getPropertyName()])
+                    ? [$entry[$field->getPropertyName()]]
+                    : []
+                );
                 foreach ($parentEntries as $parentEntry) {
                     if ($this->isParentAdmin($parentEntry, $suffix, $loggedUserName, $cache)) {
                         return true;
