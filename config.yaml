@@ -13,6 +13,8 @@ services:
 
   YesWiki\Customsendmail\Service\:
     resource: 'services/*'
+    exclude:
+     - 'GroupManagementServiceInterface.php'
 
   # Allows to use controllers as services
   YesWiki\Customsendmail\Controller\:
@@ -23,3 +25,7 @@ services:
     decoration_on_invalid: null
     arguments:
       $parentActionsBuilderService: '@.inner'
+  
+  YesWiki\Customsendmail\Service\GroupManagementService:
+    decorates: YesWiki\Groupmanagement\Service\GroupManagementService
+    decoration_on_invalid: null

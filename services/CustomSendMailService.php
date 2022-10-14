@@ -22,6 +22,7 @@ use YesWiki\Bazar\Service\FormManager;
 use YesWiki\Core\Service\AclService;
 use YesWiki\Core\Service\PageManager;
 use YesWiki\Core\Service\UserManager;
+use YesWiki\Customsendmail\Service\GroupManagementServiceInterface;
 use YesWiki\Wiki;
 
 class CustomSendMailService
@@ -29,6 +30,7 @@ class CustomSendMailService
     protected $aclService;
     protected $entryManager;
     protected $formManager;
+    protected $groupManagementService;
     protected $pageManager;
     protected $params;
     protected $userManager;
@@ -38,6 +40,7 @@ class CustomSendMailService
         AclService $aclService,
         EntryManager $entryManager,
         FormManager $formManager,
+        GroupManagementServiceInterface $groupManagementService,
         PageManager $pageManager,
         ParameterBagInterface $params,
         UserManager $userManager,
@@ -46,6 +49,7 @@ class CustomSendMailService
         $this->aclService = $aclService;
         $this->entryManager = $entryManager;
         $this->formManager = $formManager;
+        $this->groupManagementService = $groupManagementService;
         $this->pageManager = $pageManager;
         $this->params = $params;
         $this->userManager = $userManager;
@@ -64,10 +68,12 @@ class CustomSendMailService
         return (empty($fieldName) || !is_string($fieldName)) ? "" : $fieldName;
     }
 
-    public function filterEntriesFromParents(array $entries, bool $entriesMode = true, string $mode = "only_members", string $selectmembersparentform = "")
-    {
-        $cacheParents = [];
-        $entryCache = [];
+    public function filterEntriesFromParents(
+        array $entries,
+        bool $entriesMode = true,
+        string $mode = "only_members",
+        string $selectmembersparentform = ""
+    ) {
         if ($this->wiki->UserIsAdmin()) {
             return $entries;
         } else {
@@ -88,7 +94,7 @@ class CustomSendMailService
                         if (empty($fieldForArea) || !($fieldForArea instanceof EnumField)) {
                             return [];
                         }
-                        $parentsWhereAdmin = $this->getParentsWhereAdmin($selectmembersparentform, $cacheParents, $entryCache, $suffix, $user['name']);
+                        $parentsWhereAdmin = $this->getParentsWhereAdmin($selectmembersparentform, $suffix, $user['name']);
                         $areas = [];
                         foreach ($parentsWhereAdmin as $idFiche => $entry) {
                             if ($fieldForArea instanceof CheckboxField) {
@@ -116,7 +122,7 @@ class CustomSendMailService
                         $form = $this->formManager->getOne($formId);
                         if (!empty($form['prepared'])) {
                             foreach ($form['prepared'] as $field) {
-                                if ($this->isAdminOfParent($entry, [$field], $entryCache, $suffix, $user['name'])) {
+                                if ($this->isAdminOfParent($entry, [$field], $suffix, $user['name'])) {
                                     if (!in_array($entry['id_fiche'], array_keys($results))) {
                                         $results[$entry['id_fiche']] = $entry;
                                     }
@@ -146,7 +152,7 @@ class CustomSendMailService
         }
     }
 
-    public function isAdminOfParent(array $entry, array $fields, array &$cache = [], string $suffix = "", string $loggedUserName = ""): bool
+    public function isAdminOfParent(array $entry, array $fields, string $suffix = "", string $loggedUserName = ""): bool
     {
         if (empty($suffix)) {
             $suffix = $this->getAdminSuffix();
@@ -173,8 +179,9 @@ class CustomSendMailService
                     ? [$entry[$field->getPropertyName()]]
                     : []
                 );
+                $parentsForm = strval($field->getLinkedObjectName());
                 foreach ($parentEntries as $parentEntry) {
-                    if ($this->isParentAdmin($parentEntry, $suffix, $loggedUserName, $cache)) {
+                    if ($this->isParentAdmin($parentEntry, $suffix, $loggedUserName, $parentsForm)) {
                         return true;
                     }
                 }
@@ -183,52 +190,34 @@ class CustomSendMailService
         return false;
     }
 
-    private function getParentsWhereAdmin(string $id, array &$cache, array &$entryCache, string $suffix, string $loggedUserName): array
+    private function getParentsWhereAdmin(string $id, string $suffix, string $loggedUserName): array
     {
-        if (empty($cache[$id])) {
-            $cache[$id] = [];
-        }
-        if (empty($cache[$id]['entries'])) {
-            $cache[$id]['entries'] = $this->entryManager->search([
-                    'formsIds' => [$id]
-                ], true, false);
-        }
-        if (empty($cache[$id]['entries_where_admin'])) {
-            $cache[$id]['entries_where_admin'] = array_filter($cache[$id]['entries'], function ($entry) use ($suffix, $loggedUserName, &$entryCache) {
-                return $this->isParentAdmin($entry['id_fiche'], $suffix, $loggedUserName, $entryCache);
-            });
-        }
-        return $cache[$id]['entries_where_admin'];
+        $parentsWhereOwner = $this->groupManagementService->getParentsWhereOwner(['name'=>$loggedUserName], $id);
+        $parentsWhereAdminIds = $this->groupManagementService->getParentsWhereAdminIds(
+            $parentsWhereOwner,
+            ['name'=>$loggedUserName],
+            $suffix,
+            $id
+        );
+
+        return array_filter(array_map(function ($entryId) {
+            return $this->groupManagementService->getParent($id, $entryId);
+        }, $parentsWhereAdminIds), function ($entry) {
+            return !empty($entry) && !empty($entry['id_fiche']) && $this->aclService->hasAccess('read', $entry['id_fiche'], $loggedUserName);
+        });
     }
 
-    private function isParentAdmin(string $entryId, string $suffix, string $loggedUserName, array &$cache): bool
+    private function isParentAdmin(string $entryId, string $suffix, string $loggedUserName, string $parentsForm): bool
     {
-        if (empty($cache['isAdmin'])) {
-            $cache['isAdmin'] = [];
-        }
-        if (empty($cache['isNotAdmin'])) {
-            $cache['isNotAdmin'] = [];
-        }
-        if (in_array($entryId, $cache['isAdmin'])) {
-            return true;
-        } elseif (in_array($entryId, $cache['isNotAdmin'])) {
+        if (!$this->groupManagementService->isParent($entryId, $parentsForm) ||
+            !$this->aclService->hasAccess('read', $entryId, $loggedUserName)) {
             return false;
         } else {
-            if (!$this->entryManager->isEntry($entryId)) {
-                $cache['isNotAdmin'][] = $entryId;
-                return false;
-            }
             $parentOwner = $this->pageManager->getOwner($entryId);
             $groupName = "{$entryId}$suffix";
             $groupAcl = $this->wiki->GetGroupACL($groupName);
-            if ((!empty($parentOwner) && $parentOwner == $loggedUserName) ||
-                (!empty($groupAcl) && $this->aclService->check($groupAcl, $loggedUserName, true))) {
-                $cache['isAdmin'][] = $entryId;
-                return true;
-            } else {
-                $cache['isNotAdmin'][] = $entryId;
-                return false;
-            }
+            return ((!empty($parentOwner) && $parentOwner == $loggedUserName) ||
+                (!empty($groupAcl) && $this->aclService->check($groupAcl, $loggedUserName, true)));
         }
     }
 }
