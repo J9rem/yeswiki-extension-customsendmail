@@ -20,6 +20,10 @@ services:
   YesWiki\Customsendmail\Controller\:
     resource: 'controllers/*'
 
+  YesWiki\Customsendmail\Controller\GroupController:
+    tags:
+      - { name: yeswiki.event_subscriber }
+
   YesWiki\Customsendmail\Service\ActionsBuilderService:
     decorates: YesWiki\Aceditor\Service\ActionsBuilderService
     decoration_on_invalid: null
