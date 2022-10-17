@@ -86,29 +86,7 @@ class CustomSendMailService
                     return [];
                 }
                 if ($mode == "members_and_profiles_in_area") {
-                    $areaFieldName = $this->getAreaFieldName();
-                    if (empty($areaFieldName) || empty($selectmembersparentform)) {
-                        return [];
-                    } else {
-                        $fieldForArea = $this->formManager->findFieldFromNameOrPropertyName($areaFieldName, $selectmembersparentform);
-                        if (empty($fieldForArea) || !($fieldForArea instanceof EnumField)) {
-                            return [];
-                        }
-                        $parentsWhereAdmin = $this->getParentsWhereAdmin($selectmembersparentform, $suffix, $user['name']);
-                        $areas = [];
-                        foreach ($parentsWhereAdmin as $idFiche => $entry) {
-                            if ($fieldForArea instanceof CheckboxField) {
-                                $newAreas = $fieldForArea->getValues($entry);
-                            } else {
-                                $newAreas = !empty($entry[$fieldForArea->getPropertyName()]) ? [$entry[$fieldForArea->getPropertyName()]] : [];
-                            }
-                            foreach ($newAreas as $area) {
-                                if (!in_array($area, $areas)) {
-                                    $areas[] = $area;
-                                }
-                            }
-                        }
-                    }
+                    extract($this->getAreas($selectmembersparentform, $suffix, $user));
                 }
                 $results = [];
                 foreach ($entries as $key => $value) {
@@ -127,21 +105,8 @@ class CustomSendMailService
                                         $results[$entry['id_fiche']] = $entry;
                                     }
                                 }
-                                if ($mode == "members_and_profiles_in_area" &&
-                                    !in_array($entry['id_fiche'], array_keys($results)) &&
-                                    $field instanceof EnumField &&
-                                    $field->getLinkedObjectName() == $fieldForArea->getLinkedObjectName()) {
-                                    if ($field instanceof CheckboxField) {
-                                        $currentAreas = $field->getValues($entry);
-                                    } else {
-                                        $currentAreas = !empty($entry[$field->getPropertyName()]) ? [$entry[$field->getPropertyName()]] : [];
-                                    }
-                                    foreach ($currentAreas as $area) {
-                                        if (in_array($area, $areas)) {
-                                            $results[$entry['id_fiche']] = $entry;
-                                            break;
-                                        }
-                                    }
+                                if ($mode == "members_and_profiles_in_area") {
+                                    $this->processAreas($entry, $results, $field, $fieldForArea, $areas);
                                 }
                             }
                         }
@@ -188,6 +153,52 @@ class CustomSendMailService
             }
         }
         return false;
+    }
+
+    protected function getAreas($selectmembersparentform, $suffix, $user): array
+    {
+        $areaFieldName = $this->getAreaFieldName();
+        $fieldForArea = null;
+        $areas = [];
+        if (!empty($areaFieldName) && !empty($selectmembersparentform)) {
+            $fieldForArea = $this->formManager->findFieldFromNameOrPropertyName($areaFieldName, $selectmembersparentform);
+            if (!empty($fieldForArea) && $fieldForArea instanceof EnumField) {
+                $parentsWhereAdmin = $this->getParentsWhereAdmin($selectmembersparentform, $suffix, $user['name']);
+                foreach ($parentsWhereAdmin as $idFiche => $entry) {
+                    if ($fieldForArea instanceof CheckboxField) {
+                        $newAreas = $fieldForArea->getValues($entry);
+                    } else {
+                        $newAreas = !empty($entry[$fieldForArea->getPropertyName()]) ? [$entry[$fieldForArea->getPropertyName()]] : [];
+                    }
+                    foreach ($newAreas as $area) {
+                        if (!in_array($area, $areas)) {
+                            $areas[] = $area;
+                        }
+                    }
+                }
+            }
+        }
+        return compact(['areas','fieldForArea']);
+    }
+
+    protected function processAreas(array $entry, array &$results, $field, $fieldForArea, array $areas)
+    {
+        if (!empty($areas) &&
+                !in_array($entry['id_fiche'], array_keys($results)) &&
+                $field instanceof EnumField &&
+                $field->getLinkedObjectName() == $fieldForArea->getLinkedObjectName()) {
+            if ($field instanceof CheckboxField) {
+                $currentAreas = $field->getValues($entry);
+            } else {
+                $currentAreas = !empty($entry[$field->getPropertyName()]) ? [$entry[$field->getPropertyName()]] : [];
+            }
+            foreach ($currentAreas as $area) {
+                if (in_array($area, $areas)) {
+                    $results[$entry['id_fiche']] = $entry;
+                    break;
+                }
+            }
+        }
     }
 
     private function getParentsWhereAdmin(string $id, string $suffix, string $loggedUserName): array
