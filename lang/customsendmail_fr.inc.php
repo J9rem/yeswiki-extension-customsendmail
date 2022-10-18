@@ -1,6 +1,7 @@
 <?php
 
-/*
+return [
+    /*
  * This file is part of the YesWiki Extension customsendmail.
  *
  * Authors : see README.md file that was distributed with this source code.
@@ -8,21 +9,17 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
-return [
-
     // config.yaml
     'EDIT_CONFIG_GROUP_CUSTOMSENDMAIL' => 'Custom Sendmail - extension personnalisée',
     'EDIT_CONFIG_HINT_GROUPSADMINSSUFFIXFOREMAILS' => 'Suffix des groupes admins qui peuvent envoyer des e-mails',
     'EDIT_CONFIG_HINT_DEFAULT-SENDER-EMAIL' => 'E-mail par défaut pour le template "send-mail.tpl.html"',
-
+    'EDIT_CONFIG_HINT_AREAFIELDNAME' => 'Nom du champ avec la localisation validée pour les structures',
     // controllers/ApiContoller.php
     'CUSTOMSENDMAIL_CONTACTEMAIL' => 'Destinataire(s)',
     'CUSTOMSENDMAIL_ONEEMAIL' => 'en un seul e-mail groupé',
     'CUSTOMSENDMAIL_ONEBYONE' => 'un envoi d\'email par destinataire',
     'CUSTOMSENDMAIL_REPLYTO' => 'Répondre à',
-    'CUSTOMSENDMAIL_HIDDENCOPY' => 'Copie cahée à',
-
+    'CUSTOMSENDMAIL_HIDDENCOPY' => 'Copie cachée à',
     // docs/actions/bazarliste.yaml via templates/aceditor/actions-builder.tpl.html
     'CUSTOMSENDMAIL_SENDMAIL_DESCRIPTION' => 'Permet d\'envoyer des e-mails à un groupe de personnes',
     'CUSTOMSENDMAIL_SENDMAIL_DEFAULT_SENDERNAME_LABEL' => 'Nom d\'expéditeur par défaut',
@@ -34,18 +31,17 @@ return [
     'CUSTOMSENDMAIL_SENDMAIL_DEFAULTCONTENT_LABEL' => 'Contenu par défaut',
     'CUSTOMSENDMAIL_SENDMAIL_DEFAULTCONTENT' => 'Bonjour,<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;----Complétez votre message ici----<br/>',
     'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_LABEL' => 'Filtrer les fiches',
-    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_HINT' => 'Filtre à partir des fiches mères (strucutres) où je suis administrateur',
+    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_HINT' => 'Filtre à partir des fiches mères (structures) où je suis administrateur',
     'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_ONLY_MEMBERS' => 'Uniquement les membres',
     'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_BY_AREA' => 'Membres ET profiles de la zone géographique',
     'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERSPARENT_FORM_LABEL' => 'Formulaire parent',
     'AB_BAZARTABLEAU_WITH_EMAIL_LABEL' => 'Tableau avec e-mails',
-
     // templates/bazar/send-mail.twig
     'CUSTOMSENDMAIL_DEFAULT_TITLE' => 'Envoyer un e-mail à :',
     'CUSTOMSENDMAIL_LAST_UPDATE' => 'Dernière maj : %{date}',
     'CUSTOMSENDMAIL_MESSAGE' => 'Message',
     'CUSTOMSENDMAIL_MESSAGE_SUBJECT' => 'Sujet du message',
-    'CUSTOMSENDMAIL_MESSAGE_SUBJECT_PLACEHOLDER' => 'Indiquez l\'objet du mail',
+    'CUSTOMSENDMAIL_MESSAGE_SUBJECT_PLACEHOLDER' => 'Indiquez l\'objet de l\'e-mail',
     'CUSTOMSENDMAIL_SENDEREMAIL' => 'E-mail de l\'expéditeur',
     'CUSTOMSENDMAIL_SENDERNAME' => 'Nom de l\'expéditeur',
     'CUSTOMSENDMAIL_SENDMAIL' => 'Envoyer le(s) mail(s)',
@@ -56,13 +52,4 @@ return [
     'CUSTOMSENDMAIL_ADDCONTACTSTOREPLYTO' => 'Ajouter les destinataires dans "Répondre à" (uniquement pour les envois groupés)',
     'CUSTOMSENDMAIL_RECEIVEHIDDENCOPY' => 'Recevoir une copie cachée',
     'CUSTOMSENDMAIL_SENDTOGROUP' => 'Faire un envoi groupé (tout le monde voit la liste de destinataires)',
-    'CUSTOMSENDMAIL_HELP' => "Pour les envois non groupés :\n".
-        "{entryLink} => lien vers la fiche brut\n".
-        "{entryLinkWithTitle} => lien vers la fiche avec son titre\n".
-        "{entryLinkWithText} => lien vers la fiche avec le texte \"Voir la fiche xxx\"\n".
-        "{entryEditLink} => lien vers la modification de la fiche (brut)\n".
-        "{entryEditLinkWithText} => lien vers la modification de la fiche (avec le titre \"Modifier la fiche\")\n",
-    'CUSTOMSENDMAIL_HASCONTACTFROM' => "Le paramètre \"contact_from\" est défini dans le fichier \"wakka.config.php\".\n".
-        "Il remplacera l'adresse de l'expéditeur.\n".
-        "Si aucune case \"répondre à\" n'est cochée ou si l'envoi n'est pas groupé, l'adresse de l'expéditeur sera l'adresse sélectionnée pour \"répondre à\".",
 ];
