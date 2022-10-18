@@ -53,10 +53,10 @@ trait ActionsBuilderServiceCommon
             } else {
                 $this->data = $this->previousData;
             }
-            
-            if (isset($this->data['action_groups']['bazarliste'])){
+
+            if (isset($this->data['action_groups']['bazarliste'])) {
                 if (isset($this->data['action_groups']['bazarliste']['actions']) &&
-                        !isset($this->data['action_groups']['bazarliste']['actions']['bazarcustomsendmail'])){
+                        !isset($this->data['action_groups']['bazarliste']['actions']['bazarcustomsendmail'])) {
                     $this->data['action_groups']['bazarliste']['actions']['bazarcustomsendmail'] = [
                         'label' => _t('CUSTOMSENDMAIL_SENDMAIL_LABEL'),
                         'description' => _t('CUSTOMSENDMAIL_SENDMAIL_DESCRIPTION'),
@@ -67,7 +67,7 @@ trait ActionsBuilderServiceCommon
                             ],
                             'title' => [
                                 'label' => _t('CUSTOMSENDMAIL_SENDMAIL_TITLE_LABEL'),
-                                'hint' => _t('CUSTOMSENDMAIL_SENDMAIL_TITLE_EMPTY_LABEL',['emptyVal' => _t('CUSTOMSENDMAIL_DEFAULT_TITLE')]),
+                                'hint' => _t('CUSTOMSENDMAIL_SENDMAIL_TITLE_EMPTY_LABEL', ['emptyVal' => _t('CUSTOMSENDMAIL_DEFAULT_TITLE')]),
                                 'type' => 'text',
                                 'default' => _t('CUSTOMSENDMAIL_DEFAULT_TITLE'),
                             ],
@@ -95,18 +95,18 @@ trait ActionsBuilderServiceCommon
                     ];
                 }
 
-                if (isset($this->data['action_groups']['bazarliste']['actions']['bazartableau'])){
+                if (isset($this->data['action_groups']['bazarliste']['actions']['bazartableau'])) {
                     $this->data['action_groups']['bazarliste']['actions']['bazartableauwithemail'] = $this->data['action_groups']['bazarliste']['actions']['bazartableau'];
-                    $this->data['action_groups']['bazarliste']['actions']['bazartableauwithemail']['label'] = 
+                    $this->data['action_groups']['bazarliste']['actions']['bazartableauwithemail']['label'] =
                         _t('AB_BAZARTABLEAU_WITH_EMAIL_LABEL');
                     $this->data['action_groups']['bazarliste']['actions']['bazartableauwithemail']['properties']['template']['value'] = 'tableau-with-email.tpl.html';
                 }
                 if (isset($this->data['action_groups']['bazarliste']['actions']['commons']['properties']['showexportbuttons']['showExceptFor']) &&
-                        !in_array('bazarcustomsendmail',$this->data['action_groups']['bazarliste']['actions']['commons']['properties']['showexportbuttons']['showExceptFor'])){
+                        !in_array('bazarcustomsendmail', $this->data['action_groups']['bazarliste']['actions']['commons']['properties']['showexportbuttons']['showExceptFor'])) {
                     $this->data['action_groups']['bazarliste']['actions']['commons']['properties']['showexportbuttons']['showExceptFor'][] =  'bazarcustomsendmail';
                 }
                 if (!empty($this->wiki->config['GroupsAdminsSuffixForEmails']) &&
-                        isset($this->data['action_groups']['bazarliste']['actions']['commons']['properties'])){
+                        isset($this->data['action_groups']['bazarliste']['actions']['commons']['properties'])) {
                     $this->data['action_groups']['bazarliste']['actions']['commons']['properties']['selectmembers'] = [
                         'label' => _t('CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_LABEL'),
                         'hint' => _t('CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_HINT'),
@@ -120,13 +120,22 @@ trait ActionsBuilderServiceCommon
                     ];
                     $this->data['action_groups']['bazarliste']['actions']['commons']['properties']['selectmembersparentform'] = [
                         'label' => _t('CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERSPARENT_FORM_LABEL'),
-                        'type' => 'number',
+                        'type' => 'form-select',
                         'advanced' => true,
                         'required' => true,
                         'min' => 1,
                         'showif' => [
                             'selectmembers' => 'members_and_profiles_in_area' ,
                         ],
+                    ];
+                    $this->data['action_groups']['bazarliste']['actions']['commons']['properties']['selectmembersdisplayfilters'] = [
+                        'label' => _t('CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_DISPLAY_FILTERS_LABEL'),
+                        'type' => 'checkbox',
+                        'advanced' => true,
+                        'default' => "false",
+                        'checkedvalue' => "true",
+                        'uncheckedvalue' => "false",
+                        'showif' => 'selectmembers'
                     ];
                 }
             }

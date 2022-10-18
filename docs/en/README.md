@@ -3,8 +3,9 @@
 This extension creates a bazar template to send email to a group and managing display of private data to administrator of structures.
 
 !> **Warning**, to work, this extension requires :  
-    - install of extension [`groupmanagement`](https://github.com/J9rem/yeswiki-extension-groupmanagement#fran%C3%A7ais)  
-    - install of extension [`comschange`](https://github.com/J9rem/yeswiki-extension-comschange#fran%C3%A7ais)
+    - install of extension [`groupmanagement`](https://github.com/J9rem/yeswiki-extension-groupmanagement#english)  
+    - install of extension [`comschange`](https://github.com/J9rem/yeswiki-extension-comschange#english)  
+    - install of extension [`zfuture43`](https://github.com/J9rem/yeswiki-extension-zfuture43#english)
 
 ## Display private data for administrators
 
@@ -20,3 +21,17 @@ To display private data for administrators, the name of the field corresponding 
   {{button link="GererConfig" class="btn-primary new-window" text="Go to page GererConfig" title="Go to page GererConfig"}}
   ```
   5. in part `Custom Sendmail - custom extension`, copy the field name in the parameter `AreaFieldName`
+
+
+### Usage
+
+To display private data, action `bazarliste` should be configured by the following procedure.
+
+ 1. edit a page (handler `/edit`)
+ 2. Click on button components
+ 3. Then choose "Display form data"
+ 4. Choose the form to display and the template
+ 5. Check box "Advanced Parameters"
+ 6. then choose in the menu "filter entries", the wanted option between "only members" and "members AND profiles from area"
+ 7. if option "members AND profiles from area",it is needed to choose the parent form id
+ 8. Check box "Add parents entries to filters" to add parent entries to filters.
