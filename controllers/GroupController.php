@@ -26,7 +26,7 @@ class GroupController extends YesWikiController implements EventSubscriberInterf
     public function __construct(
         CustomSendMailService $customSendMailService,
         EntryManager $entryManager,
-        Wiki $wiki,
+        Wiki $wiki
     ) {
         $this->customSendMailService = $customSendMailService;
         $this->entryManager = $entryManager;
