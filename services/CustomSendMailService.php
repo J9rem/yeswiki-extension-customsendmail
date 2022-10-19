@@ -171,9 +171,10 @@ class CustomSendMailService
                         $newAreas = !empty($entry[$fieldForArea->getPropertyName()]) ? [$entry[$fieldForArea->getPropertyName()]] : [];
                     }
                     foreach ($newAreas as $area) {
-                        if (!in_array($area, $areas)) {
-                            $areas[] = $area;
+                        if (!in_array($area, array_keys($areas))) {
+                            $areas[$area] = [];
                         }
+                        $areas[$area][] = empty($entry['id_fiche']) ? $idFiche : $entry['id_fiche'];
                     }
                 }
             }
@@ -193,7 +194,7 @@ class CustomSendMailService
                 $currentAreas = !empty($entry[$field->getPropertyName()]) ? [$entry[$field->getPropertyName()]] : [];
             }
             foreach ($currentAreas as $area) {
-                if (in_array($area, $areas)) {
+                if (in_array($area, array_keys($areas))) {
                     $results[$entry['id_fiche']] = $entry;
                     break;
                 }

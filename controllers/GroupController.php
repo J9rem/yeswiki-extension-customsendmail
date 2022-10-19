@@ -37,7 +37,7 @@ class GroupController extends YesWikiController implements EventSubscriberInterf
     {
         return [
             'groupmanagement.bazarliste.entriesready' => 'filterEntriesFromParentsAfter',
-            'groupmanagement.bazarliste.beforedynamicquery' => 'keepOnlyFilteredEntriesFromParentsAfter',
+            'groupmanagement.bazarliste.afterdynamicquery' => 'keepOnlyFilteredEntriesFromParentsAfter',
         ];
     }
 
@@ -57,42 +57,57 @@ class GroupController extends YesWikiController implements EventSubscriberInterf
 
     public function keepOnlyFilteredEntriesFromParentsAfter($event)
     {
-        $eventData = $event->getData();
-        if (!empty($eventData) && is_array($eventData)) {
-            $formsIds = $eventData['formsIds'] ?? [];
-            if (!empty($formsIds)) {
-                $entries = $this->entryManager->search([
-                    'formsIds' => $formsIds
-                ], true, true);
-                $entries = $this->filterEntriesFromParents($entries, [
-                    'selectmembers' => $_GET['selectmembers'] ?? "",
-                    'selectmembersparentform' => $_GET['selectmembersparentform'] ?? "",
-                    'id' => $formsIds
-                ]);
-                if (empty($entries)) {
-                    if (!isset($_GET['query'])) {
-                        $_GET['query'] = [];
-                    }
-                    $_GET['query']['id_fiche']="";
-                } else {
-                    $rawIds = !empty($_GET['query']['id_fiche']) ? explode(',', $_GET['query']['id_fiche']) : [];
-                    $ids = array_values(array_map(function ($entry) {
-                        return $entry['id_fiche'];
-                    }, $entries));
-                    if (empty($rawIds)) {
-                        $newIds = $ids;
-                    } else {
-                        $newIds = [];
-                        foreach ($rawIds as $id) {
-                            if (in_array($id, $ids)) {
-                                $newIds[] = $id;
+        if (!$this->wiki->UserIsAdmin()) {
+            $selectmembers = (
+                !empty($_GET['selectmembers']) &&
+                    is_string($_GET['selectmembers']) &&
+                    in_array($_GET['selectmembers'], ["only_members","members_and_profiles_in_area"], true)
+            ) ? $_GET['selectmembers'] : "";
+            if (!empty($selectmembers)) {
+                $eventData = $event->getData();
+                if (!empty($eventData) &&
+                    is_array($eventData) &&
+                    isset($eventData['response']) &&
+                    method_exists($eventData['response'], 'getContent')) {
+                    $response = $eventData['response'];
+                    $status = $response->getStatusCode();
+                    if ($status < 400) {
+                        $content = $response->getContent();
+                        $contentDecoded = json_decode($content, true);
+                        if (!empty($contentDecoded) && !empty($contentDecoded['entries']) && is_array($contentDecoded['entries'])) {
+                            $fieldMapping = $contentDecoded['fieldMapping'] ?? [];
+                            $idFicheIdx = array_search("id_fiche", $fieldMapping);
+                            if ($idFicheIdx !== false && $idFicheIdx > -1) {
+                                $entries = array_filter(array_map(function($entryData) use ($idFicheIdx){
+                                    $entryId = $entryData[$idFicheIdx] ?? "";
+                                    if (!empty($entryId)){
+                                        $entry = $this->entryManager->getOne($entryId);
+                                        if (!empty($entry['id_fiche'])){
+                                            return $entry;
+                                        }
+                                    }
+                                    return [];
+                                },$contentDecoded['entries']),function($entry){
+                                    return !empty($entry);
+                                });
+                                
+                                $entries = $this->filterEntriesFromParents($entries, [
+                                    'selectmembers' => $selectmembers,
+                                    'selectmembersparentform' => $_GET['selectmembersparentform'] ?? "",
+                                    'id' => $_GET['idtypeannonce'] ?? ""
+                                ]);
+                                $entriesIds = array_map(function($entry){
+                                    return $entry['id_fiche'] ?? "";
+                                },$entries);
+                                foreach ($contentDecoded['entries'] as $idx => $entry) {
+                                    if (empty($entry[$idFicheIdx]) || !in_array($entry[$idFicheIdx],$entriesIds)) {
+                                        unset($contentDecoded['entries'][$idx]);
+                                    }
+                                }
+                                $response->setData($contentDecoded);
                             }
                         }
                     }
-                    if (!isset($_GET['query'])) {
-                        $_GET['query'] = [];
-                    }
-                    $_GET['query']['id_fiche'] = implode(',', $newIds);
                 }
             }
         }
