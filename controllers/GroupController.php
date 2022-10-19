@@ -99,9 +99,9 @@ class GroupController extends YesWikiController implements EventSubscriberInterf
                                 $entriesIds = array_map(function ($entry) {
                                     return $entry['id_fiche'] ?? "";
                                 }, $entries);
-                                $contentDecoded['entries'] = array_filter($contentDecoded['entries'], function ($entry) use ($idFicheIdx, $entriesIds) {
+                                $contentDecoded['entries'] = array_values(array_filter($contentDecoded['entries'], function ($entry) use ($idFicheIdx, $entriesIds) {
                                     return !empty($entry[$idFicheIdx]) && in_array($entry[$idFicheIdx], $entriesIds);
-                                });
+                                }));
                                 $response->setData($contentDecoded);
                             }
                         }
