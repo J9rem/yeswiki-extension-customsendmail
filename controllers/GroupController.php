@@ -78,32 +78,30 @@ class GroupController extends YesWikiController implements EventSubscriberInterf
                             $fieldMapping = $contentDecoded['fieldMapping'] ?? [];
                             $idFicheIdx = array_search("id_fiche", $fieldMapping);
                             if ($idFicheIdx !== false && $idFicheIdx > -1) {
-                                $entries = array_filter(array_map(function($entryData) use ($idFicheIdx){
+                                $entries = array_filter(array_map(function ($entryData) use ($idFicheIdx) {
                                     $entryId = $entryData[$idFicheIdx] ?? "";
-                                    if (!empty($entryId)){
+                                    if (!empty($entryId)) {
                                         $entry = $this->entryManager->getOne($entryId);
-                                        if (!empty($entry['id_fiche'])){
+                                        if (!empty($entry['id_fiche'])) {
                                             return $entry;
                                         }
                                     }
                                     return [];
-                                },$contentDecoded['entries']),function($entry){
+                                }, $contentDecoded['entries']), function ($entry) {
                                     return !empty($entry);
                                 });
-                                
+
                                 $entries = $this->filterEntriesFromParents($entries, [
                                     'selectmembers' => $selectmembers,
                                     'selectmembersparentform' => $_GET['selectmembersparentform'] ?? "",
                                     'id' => $_GET['idtypeannonce'] ?? ""
                                 ]);
-                                $entriesIds = array_map(function($entry){
+                                $entriesIds = array_map(function ($entry) {
                                     return $entry['id_fiche'] ?? "";
-                                },$entries);
-                                foreach ($contentDecoded['entries'] as $idx => $entry) {
-                                    if (empty($entry[$idFicheIdx]) || !in_array($entry[$idFicheIdx],$entriesIds)) {
-                                        unset($contentDecoded['entries'][$idx]);
-                                    }
-                                }
+                                }, $entries);
+                                $contentDecoded['entries'] = array_filter($contentDecoded['entries'], function ($entry) use ($idFicheIdx, $entriesIds) {
+                                    return !empty($entry[$idFicheIdx]) && in_array($entry[$idFicheIdx], $entriesIds);
+                                });
                                 $response->setData($contentDecoded);
                             }
                         }
