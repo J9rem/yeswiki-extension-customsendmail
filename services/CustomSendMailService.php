@@ -14,6 +14,7 @@ namespace YesWiki\Customsendmail\Service;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use YesWiki\Bazar\Field\CheckboxField;
 use YesWiki\Bazar\Field\CheckboxEntryField;
+use YesWiki\Bazar\Field\EmailField;
 use YesWiki\Bazar\Field\EnumField;
 use YesWiki\Bazar\Field\RadioEntryField;
 use YesWiki\Bazar\Field\SelectEntryField;
@@ -72,9 +73,10 @@ class CustomSendMailService
         array $entries,
         bool $entriesMode = true,
         string $mode = "only_members",
-        string $selectmembersparentform = ""
+        string $selectmembersparentform = "",
+        $callback = null
     ) {
-        if ($this->wiki->UserIsAdmin()) {
+        if ($this->wiki->UserIsAdmin() && $entriesMode) {
             return $entries;
         } else {
             $suffix = $this->getAdminSuffix();
@@ -102,7 +104,7 @@ class CustomSendMailService
                             foreach ($form['prepared'] as $field) {
                                 if ($this->isAdminOfParent($entry, [$field], $suffix, $user['name'])) {
                                     if (!in_array($entry['id_fiche'], array_keys($results))) {
-                                        $results[$entry['id_fiche']] = $entry;
+                                        $results[$entry['id_fiche']] =  is_callable($callback) ? $callback($entry, $form, $suffix, $user) : $entry;
                                     }
                                 }
                                 if ($mode == "members_and_profiles_in_area") {
@@ -117,8 +119,40 @@ class CustomSendMailService
         }
     }
 
+    public function displayEmailIfAdminOfParent(array $entries): array
+    {
+        $entriesIds = array_map(function ($entry) {
+            return $entry['id_fiche'] ?? "";
+        }, $entries);
+        $filteredEntries = $this->filterEntriesFromParents(
+            $entriesIds,
+            false,
+            "only_members",
+            "",
+            function (array $entry, array $form, string $suffix, $user) use (&$entries, $entriesIds) {
+                $entryKey = array_search($entry['id_fiche'] ?? '', $entriesIds);
+                if ($entryKey !== false) {
+                    foreach ($form['prepared'] as $field) {
+                        $propName = $field->getPropertyName();
+                        if ($field instanceof EmailField && !empty($propName)) {
+                            $email = $entry[$propName] ?? "";
+                            if (!empty($email) && isset($entries[$entryKey][$propName])) {
+                                $entries[$entryKey][$propName] = $email;
+                            }
+                        }
+                    }
+                }
+                return $entry;
+            }
+        );
+        return $entries;
+    }
+
     public function isAdminOfParent(array $entry, array $fields, string $suffix = "", string $loggedUserName = ""): bool
     {
+        if ($this->wiki->UserIsAdmin($loggedUserName)) {
+            return true;
+        }
         if (empty($suffix)) {
             $suffix = $this->getAdminSuffix();
             if (empty($suffix)) {
