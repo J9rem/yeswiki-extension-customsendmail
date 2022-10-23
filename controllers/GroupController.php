@@ -94,6 +94,7 @@ class GroupController extends YesWikiController implements EventSubscriberInterf
                                 $entries = $this->filterEntriesFromParents($entries, [
                                     'selectmembers' => $selectmembers,
                                     'selectmembersparentform' => $_GET['selectmembersparentform'] ?? "",
+                                    'selectmembersdisplayfilters' => $_GET['selectmembersdisplayfilters'] ?? false,
                                     'id' => $_GET['idtypeannonce'] ?? ""
                                 ]);
                                 $entriesIds = array_map(function ($entry) {
@@ -123,6 +124,10 @@ class GroupController extends YesWikiController implements EventSubscriberInterf
                 strval($arg['selectmembersparentform']) == strval(intval($arg['selectmembersparentform'])) &&
                 intval($arg['selectmembersparentform']) > 0
         ) ? $arg['selectmembersparentform'] : "";
+        $selectmembersdisplayfilters = (
+            !empty($arg['selectmembersdisplayfilters']) &&
+            in_array($arg['selectmembersdisplayfilters'], [true,1,"1","true"], true)
+        );
 
         if (!$this->wiki->UserIsAdmin() && !empty($selectmembers)) {
             $ids = $arg['id'] ?? null;
@@ -139,7 +144,9 @@ class GroupController extends YesWikiController implements EventSubscriberInterf
                         $entries,
                         true,
                         $selectmembers,
-                        $selectmembersparentform
+                        $selectmembersparentform,
+                        null,
+                        $selectmembersdisplayfilters
                     );
                 }
             }

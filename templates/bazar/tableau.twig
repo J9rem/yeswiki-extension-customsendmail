@@ -9,7 +9,7 @@
  *#}
 
 {% if param.customSendMailService and entries %}
-  {% set entries = attribute(param.customSendMailService,'displayEmailIfAdminOfParent',[entries]) %}
+  {% set entries = attribute(param.customSendMailService,'displayEmailIfAdminOfParent',[entries,param]) %}
 {% endif %}
 {{ include([
   'custom/templates/bazar/templates/tableau.twig',

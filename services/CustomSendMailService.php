@@ -28,6 +28,9 @@ use YesWiki\Wiki;
 
 class CustomSendMailService
 {
+    public const KEY_FOR_PARENTS = "bf-custom-send-mail-parents";
+    public const KEY_FOR_AREAS = "bf-custom-send-mail-areas";
+
     protected $aclService;
     protected $entryManager;
     protected $formManager;
@@ -74,9 +77,10 @@ class CustomSendMailService
         bool $entriesMode = true,
         string $mode = "only_members",
         string $selectmembersparentform = "",
-        $callback = null
+        $callback = null,
+        bool $appendDisplayData = false
     ) {
-        if ($this->wiki->UserIsAdmin() && $entriesMode) {
+        if ($this->wiki->UserIsAdmin() && $entriesMode && !$appendDisplayData) {
             return $entries;
         } else {
             $suffix = $this->getAdminSuffix();
@@ -102,15 +106,34 @@ class CustomSendMailService
                         $form = $this->formManager->getOne($formId);
                         if (!empty($form['prepared'])) {
                             foreach ($form['prepared'] as $field) {
-                                if ($this->isAdminOfParent($entry, [$field], $suffix, $user['name'])) {
-                                    if (!in_array($entry['id_fiche'], array_keys($results))) {
-                                        $results[$entry['id_fiche']] =  is_callable($callback) ? $callback($entry, $form, $suffix, $user) : $entry;
-                                    }
+                                $parentsIds = $this->isAdminOfParent($entry, [$field], $suffix, $user['name'], $appendDisplayData);
+                                if (!empty($parentsIds)) {
+                                    $this->appendEntryWithData(
+                                        $entry,
+                                        $results,
+                                        $form,
+                                        $suffix,
+                                        $user,
+                                        $callback,
+                                        self::KEY_FOR_PARENTS,
+                                        $parentsIds,
+                                        $appendDisplayData
+                                    );
                                 }
                                 if ($mode == "members_and_profiles_in_area") {
-                                    $this->processAreas($entry, $results, $field, $fieldForArea, $areas);
+                                    $this->processAreas($entry, $results, $field, $fieldForArea, $areas, $form, $suffix, $user, $callback, $appendDisplayData);
                                 }
                             }
+                        }
+                    }
+                }
+                if ($appendDisplayData) {
+                    foreach ($results as $entryId => $entry) {
+                        if (!empty($entry[self::KEY_FOR_PARENTS])) {
+                            $results[$entryId]['html_data'] = $results[$entryId]['html_data'] . " data-".self::KEY_FOR_PARENTS."=\"".htmlentities(implode(',', $entry[self::KEY_FOR_PARENTS]))."\"";
+                        }
+                        if (!empty($entry[self::KEY_FOR_AREAS])) {
+                            $results[$entryId]['html_data'] = $results[$entryId]['html_data'] . " data-".self::KEY_FOR_AREAS."=\"".htmlentities(implode(',', $entry[self::KEY_FOR_AREAS]))."\"";
                         }
                     }
                 }
@@ -119,8 +142,12 @@ class CustomSendMailService
         }
     }
 
-    public function displayEmailIfAdminOfParent(array $entries): array
+    public function displayEmailIfAdminOfParent(array $entries, ?array $arg): array
     {
+        $selectmembersdisplayfilters = (
+            !empty($arg['selectmembersdisplayfilters']) &&
+            in_array($arg['selectmembersdisplayfilters'], [true,1,"1","true"], true)
+        );
         $entriesIds = array_map(function ($entry) {
             return $entry['id_fiche'] ?? "";
         }, $entries);
@@ -143,30 +170,154 @@ class CustomSendMailService
                     }
                 }
                 return $entry;
-            }
+            },
+            $selectmembersdisplayfilters
         );
+        if ($selectmembersdisplayfilters) {
+            foreach ($entries as $idx => $entry) {
+                $entryId = $entry['id_fiche'] ?? "";
+                if (!empty($entryId) && !empty($filteredEntries[$entryId]) &&
+                    !empty($filteredEntries[$entryId][self::KEY_FOR_PARENTS])) {
+                    $entries[$idx][self::KEY_FOR_PARENTS] = $filteredEntries[$entryId][self::KEY_FOR_PARENTS];
+                    if (!empty($filteredEntries[$entryId][self::KEY_FOR_AREAS])) {
+                        $entries[$idx][self::KEY_FOR_AREAS] = $filteredEntries[$entryId][self::KEY_FOR_AREAS];
+                    }
+                    if (!empty($filteredEntries[$entryId]['html_data'])) {
+                        $entries[$idx]['html_data'] = $filteredEntries[$entryId]['html_data'];
+                    }
+                }
+            }
+        }
         return $entries;
     }
 
-    public function isAdminOfParent(array $entry, array $fields, string $suffix = "", string $loggedUserName = ""): bool
+    public function updateFilters(?array $filters, ?string $renderedEntries): array
     {
-        if ($this->wiki->UserIsAdmin($loggedUserName)) {
-            return true;
+        $keyForParents = preg_quote(self::KEY_FOR_PARENTS, "/");
+        $keyForAreas = preg_quote(self::KEY_FOR_AREAS, "/");
+        $tag = WN_CAMEL_CASE_EVOLVED;
+        $tagOrComa = "[\p{L}\-_.0-9,]+" ; // WN_CAMEL_CASE_EVOLVED + ","
+        if (preg_match_all("/data-id_fiche=\"($tag)\"[^>]+data-$keyForParents=\"($tagOrComa)\"[^>]*(?:data-$keyForAreas=\"($tagOrComa)\")?/", $renderedEntries, $matches)) {
+            $parents = [];
+            $areas = [];
+            foreach ($matches[0] as $idx => $match) {
+                $tag = $matches[1][$idx];
+                $parentsAsString = $matches[2][$idx];
+                $areasAsString = $matches[3][$idx];
+                $currentParents = empty($parentsAsString) ? [] : explode(',', $parentsAsString);
+                if (!isset($parents[$tag])) {
+                    $parents[$tag] = $currentParents;
+                }
+                $currentAreas = empty($areasAsString) ? [] : explode(',', $areasAsString);
+                if (!isset($parents[$tag])) {
+                    $areas[$tag] = $areasAsString;
+                }
+            }
+            $formattedParents = [];
+            foreach ($parents as $entryId => $list) {
+                foreach ($list as $tagName) {
+                    if (!isset($formattedParents[$tagName])) {
+                        $formattedParents[$tagName] = [
+                            'nb' => 0
+                        ];
+                    }
+                    $formattedParents[$tagName]['nb'] = $formattedParents[$tagName]['nb'] + 1;
+                }
+            }
+            $formattedAreas = [];
+            foreach ($areas as $entryId => $list) {
+                foreach ($list as $tagName) {
+                    if (!isset($formattedAreas[$tagName])) {
+                        $formattedAreas[$tagName] = [
+                            'nb' => 0
+                        ];
+                    }
+                    $formattedAreas[$tagName]['nb'] = $formattedAreas[$tagName]['nb'] + 1;
+                }
+            }
         }
+        if (!empty($formattedParents)) {
+            $tabfacette = [];
+            $tab = (empty($_GET['facette']) || !is_string($_GET['facette'])) ? [] : explode('|', $_GET['facette']);
+            //découpe la requete autour des |
+            foreach ($tab as $req) {
+                $tabdecoup = explode('=', $req, 2);
+                if (count($tabdecoup)>1) {
+                    $tabfacette[$tabdecoup[0]] = explode(',', trim($tabdecoup[1]));
+                }
+            }
+            $parentList = [];
+            foreach ($formattedParents as $tagName => $formattedParent) {
+                $parentList[] = [
+                    "id" => self::KEY_FOR_PARENTS.$tagName,
+                    "name" => self::KEY_FOR_PARENTS,
+                    "value" => $tagName,
+                    "label" => $tagName,
+                    "nb" => $formattedParent['nb'] ?? 0,
+                    "checked" => (!empty($tabfacette[self::KEY_FOR_PARENTS]) && in_array($tagName, $tabfacette[self::KEY_FOR_PARENTS])) ? " checked" : ""
+                ];
+            }
+            $areaList = [];
+            foreach ($formattedAreas as $tagName => $formattedArea) {
+                $areaList[] = [
+                    "id" => self::KEY_FOR_AREAS.$tagName,
+                    "name" => self::KEY_FOR_AREAS,
+                    "value" => $tagName,
+                    "label" => $tagName,
+                    "nb" => $formattedArea['nb'] ?? 0,
+                    "checked" => (!empty($tabfacette[self::KEY_FOR_PARENTS]) && in_array($tagName, $tabfacette[self::KEY_FOR_PARENTS])) ? " checked" : ""
+                ];
+            }
+            $newFilters = [];
+            if (!empty($areaList)) {
+                $newFilters[self::KEY_FOR_AREAS] = [
+                    "icon" => "",
+                    "title" => _t('CUSTOMSENDMAIL_AREAS_TITLES'),
+                    "collapsed" => false,
+                    "index" => 0,
+                    "list" => $areaList
+                ];
+                $index = 1;
+            } else {
+                $index = 0;
+            }
+            $newFilters[self::KEY_FOR_PARENTS] = [
+                "icon" => "",
+                "title" => _t('CUSTOMSENDMAIL_PARENTS_TITLES'),
+                "collapsed" => false,
+                "index" => $index,
+                "list" => $parentList
+            ];
+            foreach ($filters as $key => $value) {
+                $newFilters[$key] = $value;
+            }
+            $filters = $newFilters;
+        }
+        return $filters;
+    }
+
+    public function isAdminOfParent(
+        array $entry,
+        array $fields,
+        string $suffix = "",
+        string $loggedUserName = "",
+        bool $appendDisplayData = false
+    ): array {
         if (empty($suffix)) {
             $suffix = $this->getAdminSuffix();
             if (empty($suffix)) {
-                return false;
+                return [];
             }
         }
         if (empty($loggedUserName)) {
             $user = $this->userManager->getLoggedUser();
             if (empty($user['name'])) {
-                return false;
+                return [];
             } else {
                 $loggedUserName = $user['name'];
             }
         }
+        $parentsIds = [];
         foreach ($fields as $field) {
             if ($field instanceof CheckboxEntryField ||
                     $field instanceof RadioEntryField ||
@@ -180,13 +331,17 @@ class CustomSendMailService
                 );
                 $parentsForm = strval($field->getLinkedObjectName());
                 foreach ($parentEntries as $parentEntry) {
-                    if ($this->isParentAdmin($parentEntry, $suffix, $loggedUserName, $parentsForm)) {
-                        return true;
+                    if ($this->isParentAdmin($parentEntry, $suffix, $loggedUserName, $parentsForm) &&
+                            !in_array($parentEntry, $parentsIds)) {
+                        $parentsIds[] = $parentEntry;
+                        if (!$appendDisplayData) {
+                            return $parentsIds;
+                        }
                     }
                 }
             }
         }
-        return false;
+        return $parentsIds;
     }
 
     protected function getAreas($selectmembersparentform, $suffix, $user): array
@@ -216,10 +371,20 @@ class CustomSendMailService
         return compact(['areas','fieldForArea']);
     }
 
-    protected function processAreas(array $entry, array &$results, $field, $fieldForArea, array $areas)
-    {
+    protected function processAreas(
+        array $entry,
+        array &$results,
+        $field,
+        $fieldForArea,
+        array $areas,
+        ?array $form,
+        ?string $suffix,
+        $user,
+        $callback,
+        bool $appendDisplayData = false
+    ) {
+        // same Area
         if (!empty($areas) &&
-                !in_array($entry['id_fiche'], array_keys($results)) &&
                 $field instanceof EnumField &&
                 $field->getLinkedObjectName() == $fieldForArea->getLinkedObjectName()) {
             if ($field instanceof CheckboxField) {
@@ -227,10 +392,72 @@ class CustomSendMailService
             } else {
                 $currentAreas = !empty($entry[$field->getPropertyName()]) ? [$entry[$field->getPropertyName()]] : [];
             }
-            foreach ($currentAreas as $area) {
-                if (in_array($area, array_keys($areas))) {
-                    $results[$entry['id_fiche']] = $entry;
-                    break;
+            $validatedAreas = array_filter($currentAreas, function ($area) use ($areas) {
+                return in_array($area, array_keys($areas));
+            });
+            if (!empty($validatedAreas)) {
+                $this->appendEntryWithData(
+                    $entry,
+                    $results,
+                    $form,
+                    $suffix,
+                    $user,
+                    $callback,
+                    self::KEY_FOR_AREAS,
+                    $validatedAreas,
+                    $appendDisplayData
+                );
+                if ($appendDisplayData) {
+                    $validatedParentsIds = [];
+                    foreach ($validatedAreas as $area) {
+                        $parentsIds = $areas[$area];
+                        foreach ($parentsIds as $parentId) {
+                            if (!in_array($parentId, $validatedParentsIds)) {
+                                $validatedParentsIds[] = $parentId;
+                            }
+                        }
+                    }
+                    if (!empty($validatedParentsIds)) {
+                        $this->appendEntryWithData(
+                            $entry,
+                            $results,
+                            $form,
+                            $suffix,
+                            $user,
+                            $callback,
+                            self::KEY_FOR_PARENTS,
+                            $validatedParentsIds,
+                            true
+                        );
+                    }
+                }
+            }
+        }
+        // check postal code
+        // check group of areas
+    }
+
+    protected function appendEntryWithData(
+        array $entry,
+        array &$results,
+        ?array $form,
+        ?string $suffix,
+        $user,
+        $callback,
+        string $key,
+        $ids,
+        bool $appendDisplayData = false
+    ) {
+        if (!in_array($entry['id_fiche'], array_keys($results))) {
+            $results[$entry['id_fiche']] =  is_callable($callback) ? $callback($entry, $form, $suffix, $user) : $entry;
+        }
+        if ($appendDisplayData) {
+            if (!isset($results[$entry['id_fiche']][$key])) {
+                $results[$entry['id_fiche']][$key] = [];
+            }
+            foreach ($ids as $id) {
+                if (!in_array($id, $results[$entry['id_fiche']][$key])) {
+                    $results[$entry['id_fiche']][$key][] = $id;
                 }
             }
         }
@@ -258,6 +485,8 @@ class CustomSendMailService
         if (!$this->groupManagementService->isParent($entryId, $parentsForm) ||
             !$this->aclService->hasAccess('read', $entryId, $loggedUserName)) {
             return false;
+        } elseif ($this->wiki->UserIsAdmin($loggedUserName)) {
+            return true;
         } else {
             $parentOwner = $this->pageManager->getOwner($entryId);
             $groupName = "{$entryId}$suffix";

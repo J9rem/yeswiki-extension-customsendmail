@@ -9,11 +9,15 @@ return [
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+    // actions/__BazarListeAction.php
+    'CUSTOMSENDMAIL_PARENTS_TITLES' => 'Interested structures',
+    'CUSTOMSENDMAIL_AREAS_TITLES' => 'Areas of interest',
     // config.yaml
     'EDIT_CONFIG_GROUP_CUSTOMSENDMAIL' => 'Custom Sendmail - custom extension',
     'EDIT_CONFIG_HINT_GROUPSADMINSSUFFIXFOREMAILS' => 'Admins groups suffix which can send emails',
     'EDIT_CONFIG_HINT_DEFAULT-SENDER-EMAIL' => 'Default email for template "send-mail.tpl.html"',
     'EDIT_CONFIG_HINT_AREAFIELDNAME' => 'Fieldname for validated localization for structures',
+    'EDIT_CONFIG_HINT_POSTALCODEFIELDNAME' => 'Fieldname for postal code',
     'EDIT_CONFIG_HINT_FORMIDAREATODEPARTMENT' => 'Form id of correspondance between area and department',
     // controllers/ApiContoller.php
     'CUSTOMSENDMAIL_CONTACTEMAIL' => 'Addresses',

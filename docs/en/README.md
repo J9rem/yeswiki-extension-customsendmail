@@ -21,6 +21,7 @@ To display private data for administrators, the name of the field corresponding 
   {{button link="GererConfig" class="btn-primary new-window" text="Go to page GererConfig" title="Go to page GererConfig"}}
   ```
   5. in part `Custom Sendmail - custom extension`, copy the field name in the parameter `AreaFieldName`
+  6. in part `Custom Sendmail - custom extension`, check the field name in the parameter `PostalCodeFieldName` to be sure that it is the same as the one used in wiki's forms.
 
 
 ### Usage

@@ -2,11 +2,13 @@ parameters:
   GroupsAdminsSuffixForEmails: ''
   default-sender-email: ''
   AreaFieldName: ''
+  PostalCodeFieldName: 'bf_code_postal'
   formIdAreaToDepartment: ''
   customsendmail_editable_config_params:
    - 'GroupsAdminsSuffixForEmails'
    - 'default-sender-email'
    - 'AreaFieldName'
+   - 'PostalCodeFieldName'
    - 'formIdAreaToDepartment'
 services:
   _defaults:

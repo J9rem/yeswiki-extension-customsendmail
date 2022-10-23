@@ -21,6 +21,7 @@ Pour afficher les données sensibles, il est nécessaire de fournir au ficher de
   {{button link="GererConfig" class="btn-primary new-window" text="Se rendre sur la page GererConfig" title="Se rendre sur la page GererConfig"}}
   ```
   5. dans la partie `Custom Sendmail - extension personnalisée`, recopier le nom du champ pour le paramètre `AreaFieldName`
+  6. dans la partie `Custom Sendmail - extension personnalisée`, vérifier aussi le nom du champ pour le paramètre `PostalCodeFieldName` afin qu'il corresponde au nom utilisé pour le champ code postal dans les formulaire.
 
 ### Fonctionnement
 
@@ -45,7 +46,7 @@ Pour afficher les données sensibles, il faut configurer l'action `bazarliste` e
 ||Structure|Structure|Acteur|Acteur|Acteur|Acteur|Est affiché ?|
 |:-|:-|:-|:-|:-|:-|:-|:-|
 |_Nom_|**Région**|**Départements validés**|**Région**|**Département**|**Code postal**|**Est membre ?**||
-|_Nom du champ_|`bf_region`|`checkboxListeDepartementsFrancais`|`bf_region_adhesion`|`bf_departement_adhesion`|`bf_codepostal`|`bf_structure_locale_adhesion`|
+|_Nom du champ_|`bf_region`|`checkboxListeDepartementsFrancais`|`bf_region_adhesion`|`bf_departement_adhesion`|`bf_code_postal`|`bf_structure_locale_adhesion`|
 |_Liste associée_|`ListeRegionsFrancaises`|`ListeDepartementsFrancais`|`ListeRegionsFrancaises`|`ListeDepartementsFrancais`|---|formulaire structure|
 ||peu importe|peu importe|peu importe|peu importe|peu importe|**oui**|oui|
 ||peu importe|**vide**|peu importe|peu importe|peu importe|non|non|

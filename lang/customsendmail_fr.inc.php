@@ -9,11 +9,15 @@ return [
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+    // actions/__BazarListeAction.php
+    'CUSTOMSENDMAIL_PARENTS_TITLES' => 'Structures d\'intérêt',
+    'CUSTOMSENDMAIL_AREAS_TITLES' => 'Zones d\'intérêt',
     // config.yaml
     'EDIT_CONFIG_GROUP_CUSTOMSENDMAIL' => 'Custom Sendmail - extension personnalisée',
     'EDIT_CONFIG_HINT_GROUPSADMINSSUFFIXFOREMAILS' => 'Suffix des groupes admins qui peuvent envoyer des e-mails',
     'EDIT_CONFIG_HINT_DEFAULT-SENDER-EMAIL' => 'E-mail par défaut pour le template "send-mail.tpl.html"',
     'EDIT_CONFIG_HINT_AREAFIELDNAME' => 'Nom du champ avec la localisation validée pour les structures',
+    'EDIT_CONFIG_HINT_POSTALCODEFIELDNAME' => 'Nom du champ avec le code postal',
     'EDIT_CONFIG_HINT_FORMIDAREATODEPARTMENT' => 'Numero du formulaire de correspondance entre région et département',
     // controllers/ApiContoller.php
     'CUSTOMSENDMAIL_CONTACTEMAIL' => 'Destinataire(s)',
