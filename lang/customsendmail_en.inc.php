@@ -12,6 +12,12 @@ return [
     // actions/__BazarListeAction.php
     'CUSTOMSENDMAIL_PARENTS_TITLES' => 'Interested structures',
     'CUSTOMSENDMAIL_AREAS_TITLES' => 'Areas of interest',
+    // actions/CustomSendmailAutoupdateLinkAction.php
+    'CUSTOMSENDMAIL_AUTOUPDATE_RESERVED_TO_ADMIN' => 'Update link only available for connected administrators',
+    'CUSTOMSENDMAIL_AUTOUPDATE_TEXT' => 'Create automatically the list %{listName}',
+    'CUSTOMSENDMAIL_AUTOUPDATE_OF_DEPARTEMENTS' => 'of french departments',
+    'CUSTOMSENDMAIL_AUTOUPDATE_OF_AREAS' => 'of french administratives areas',
+    'CUSTOMSENDMAIL_AUTOUPDATE_FORM' => ', the form and entries associating rfrench areas and departments',
     // config.yaml
     'EDIT_CONFIG_GROUP_CUSTOMSENDMAIL' => 'Custom Sendmail - custom extension',
     'EDIT_CONFIG_HINT_GROUPSADMINSSUFFIXFOREMAILS' => 'Admins groups suffix which can send emails',

@@ -62,7 +62,7 @@ Pour afficher les données sensibles, il faut configurer l'action `bazarliste` e
 ||peu importe|**Morbihan,Finistère**|Bretagne|Ille-et-Vilaine|**56000**|non|oui|
 ||peu importe|**Morbihan,Finistère**|Bretagne|Ille-et-Vilaine|**13000**|non|non|
 
-(*): ne fonctionne que si un formulaire d'association de régions et de départements a été créé
+(*): ne fonctionne que si un formulaire d'association de régions et de départements a été créé (voir _plus bas_)
 
 **important** : la détection automatique de département à partir du code postal ne fonctionne que si la liste des départements possède le bon numéro de département comme clé.
 
@@ -82,3 +82,28 @@ Pour afficher les données sensibles, il faut configurer l'action `bazarliste` e
  {{button link="GererConfig" class="btn-primary new-window" text="Se rendre sur la page GererConfig" title="Se rendre sur la page GererConfig"}}
  ```
  5. dans la partie `Custom Sendmail - extension personnalisée`, mettre le numéro du formulaire en question pour le paramètre `formIdAreaToDepartment`
+
+#### Création automatique des fiches associant régions et département
+
+Il est possible d'automatiquement créer le formulaire et les fiches pour associer les régions et les départements en cliquant sur le bouton ci-dessous en tant qu'administrateur du wiki. (_Attention, si le formulaire existe déjà, il n'est pas mise à jour. Il faut le supprimer au préalable._)
+
+```yeswiki preview=70px
+{{customsendmailautoupdatelink type="form"}}
+```
+Le numéro du formulaire est stocké dans le paramètre `formIdAreaToDepartment` dans la page `GererConfig`
+
+#### Création automatique de la liste des départements français
+
+Il est possible d'automatiquement créer la liste des départements français en cliquant sur le bouton ci-dessous en tant qu'administrateur du wiki. Il n'y aura plus qu'à sélectionner cette liste dans le menu déroulant du constructeur graphique de formulaire. (_Attention, si la liste existe déjà, elle n'est pas mise à jour. Il faut la supprimer au préalable._)
+
+```yeswiki preview=70px
+{{customsendmailautoupdatelink type="departments"}}
+```
+
+#### Création automatique de la liste des régions françaises
+
+Il est possible d'automatiquement créer la liste des régions françaises en cliquant sur le bouton ci-dessous en tant qu'administrateur du wiki. Il n'y aura plus qu'à sélectionner cette liste dans le menu déroulant du constructeur graphique de formulaire. (_Attention, si la liste existe déjà, elle n'est pas mise à jour. Il faut la supprimer au préalable._)
+
+```yeswiki preview=70px
+{{customsendmailautoupdatelink type="areas"}}
+```
