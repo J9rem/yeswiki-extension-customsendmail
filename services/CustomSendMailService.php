@@ -95,6 +95,7 @@ class CustomSendMailService
                     extract($this->getAreas($selectmembersparentform, $suffix, $user));
                 }
                 $results = [];
+                $formCache = [];
                 foreach ($entries as $key => $value) {
                     if ($entriesMode) {
                         $entry = $value;
@@ -103,15 +104,15 @@ class CustomSendMailService
                     }
                     if (!empty($entry['id_typeannonce'])) {
                         $formId = $entry['id_typeannonce'];
-                        $form = $this->formManager->getOne($formId);
-                        if (!empty($form['prepared'])) {
-                            foreach ($form['prepared'] as $field) {
-                                $parentsIds = $this->isAdminOfParent($entry, [$field], $suffix, $user['name'], $appendDisplayData);
+                        $formData = $this->extractFields($formId, $formCache, $fieldForArea ?? null);
+                        if (!empty($formData)) {
+                            if (!empty($formData['enumEntryFields'])) {
+                                $parentsIds = $this->isAdminOfParent($entry, $formData['enumEntryFields'], $suffix, $user['name'], $appendDisplayData);
                                 if (!empty($parentsIds)) {
                                     $this->appendEntryWithData(
                                         $entry,
                                         $results,
-                                        $form,
+                                        $formData['form'],
                                         $suffix,
                                         $user,
                                         $callback,
@@ -120,9 +121,9 @@ class CustomSendMailService
                                         $appendDisplayData
                                     );
                                 }
-                                if ($mode == "members_and_profiles_in_area") {
-                                    $this->processAreas($entry, $results, $field, $fieldForArea, $areas, $form, $suffix, $user, $callback, $appendDisplayData);
-                                }
+                            }
+                            if ($mode == "members_and_profiles_in_area" && !empty($formData['area'])) {
+                                $this->processAreas($entry, $results, $formData['area']['field'], $areas, $formData['form'], $suffix, $user, $callback, $appendDisplayData);
                             }
                         }
                     }
@@ -140,6 +141,42 @@ class CustomSendMailService
                 return $results;
             }
         }
+    }
+
+    /**
+     * @param scalar $formId
+     * @param array &$formCache
+     * @param null|EnumField $fieldForArea
+     * @return array ['form'=>array'enumEntryFields'=>array,'area' => ['name'=> string,'field'=>EnumField]]
+     */
+    private function extractFields($formId, array &$formCache, $fieldForArea): array
+    {
+        if (empty($formId) || !is_scalar($formId) || strval($formId) != strval(intval($formId)) || intval($formId)<0) {
+            return [];
+        } elseif (!isset($formCache[$formId])) {
+            $formCache[$formId] = [];
+            $formCache[$formId]['form'] = $this->formManager->getOne($formId);
+            if (empty($formCache[$formId]['form']['prepared'])) {
+                $formCache[$formId]['form'] = [];
+            } else {
+                $formCache[$formId]['enumEntryFields'] = [];
+                $formCache[$formId]['area'] = [];
+                foreach ($formCache[$formId]['form']['prepared'] as $field) {
+                    if ($field instanceof CheckboxEntryField ||
+                        $field instanceof RadioEntryField ||
+                        $field instanceof SelectEntryField) {
+                        $formCache[$formId]['enumEntryFields'][] = $field;
+                    }
+                    if ($fieldForArea && $field instanceof EnumField && $field->getLinkedObjectName() === $fieldForArea->getLinkedObjectName()) {
+                        $formCache[$formId]['area'] = [
+                            'name' => $field->getPropertyName(),
+                            'field' => $field
+                        ];
+                    }
+                }
+            }
+        }
+        return $formCache[$formId];
     }
 
     public function displayEmailIfAdminOfParent(array $entries, ?array $arg): array
@@ -296,47 +333,37 @@ class CustomSendMailService
         return $filters;
     }
 
-    public function isAdminOfParent(
+    /**
+     * @param array $entry
+     * @param array $fields ! should be CheckboxEntryField or RadioEntryField or SelectEntryField
+     * @param string $suffix not empty
+     * @param string $loggedUserName nto empty
+     * @param bool $appendDisplayData
+     * @return array $parentsIds
+     */
+    private function isAdminOfParent(
         array $entry,
         array $fields,
-        string $suffix = "",
-        string $loggedUserName = "",
+        string $suffix,
+        string $loggedUserName,
         bool $appendDisplayData = false
     ): array {
-        if (empty($suffix)) {
-            $suffix = $this->getAdminSuffix();
-            if (empty($suffix)) {
-                return [];
-            }
-        }
-        if (empty($loggedUserName)) {
-            $user = $this->userManager->getLoggedUser();
-            if (empty($user['name'])) {
-                return [];
-            } else {
-                $loggedUserName = $user['name'];
-            }
-        }
         $parentsIds = [];
         foreach ($fields as $field) {
-            if ($field instanceof CheckboxEntryField ||
-                    $field instanceof RadioEntryField ||
-                    $field instanceof SelectEntryField) {
-                $parentEntries = ($field instanceof CheckboxEntryField)
+            $parentEntries = ($field instanceof CheckboxEntryField)
                 ? $field->getValues($entry)
                 : (
                     !empty($entry[$field->getPropertyName()])
                     ? [$entry[$field->getPropertyName()]]
                     : []
                 );
-                $parentsForm = strval($field->getLinkedObjectName());
-                foreach ($parentEntries as $parentEntry) {
-                    if ($this->isParentAdmin($parentEntry, $suffix, $loggedUserName, $parentsForm) &&
-                            !in_array($parentEntry, $parentsIds)) {
-                        $parentsIds[] = $parentEntry;
-                        if (!$appendDisplayData) {
-                            return $parentsIds;
-                        }
+            $parentsForm = strval($field->getLinkedObjectName());
+            foreach ($parentEntries as $parentEntry) {
+                if ($this->isParentAdmin($parentEntry, $suffix, $loggedUserName, $parentsForm) &&
+                        !in_array($parentEntry, $parentsIds)) {
+                    $parentsIds[] = $parentEntry;
+                    if (!$appendDisplayData) {
+                        return $parentsIds;
                     }
                 }
             }
@@ -374,8 +401,7 @@ class CustomSendMailService
     protected function processAreas(
         array $entry,
         array &$results,
-        $field,
-        $fieldForArea,
+        $field, // the right field corresponding to area
         array $areas,
         ?array $form,
         ?string $suffix,
@@ -384,9 +410,7 @@ class CustomSendMailService
         bool $appendDisplayData = false
     ) {
         // same Area
-        if (!empty($areas) &&
-                $field instanceof EnumField &&
-                $field->getLinkedObjectName() == $fieldForArea->getLinkedObjectName()) {
+        if (!empty($areas)) {
             if ($field instanceof CheckboxField) {
                 $currentAreas = $field->getValues($entry);
             } else {
