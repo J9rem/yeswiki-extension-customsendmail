@@ -64,7 +64,7 @@ Pour afficher les données sensibles, il faut configurer l'action `bazarliste` e
 
 (*): ne fonctionne que si un formulaire d'association de régions et de départements a été créé (voir _plus bas_)
 
-**important** : la détection automatique de département à partir du code postal ne fonctionne que si la liste des départements possède le bon numéro de département comme clé.
+**important** : la détection automatique de département à partir du code postal ne fonctionne que si la liste des départements possède le bon numéro de département comme clé et que si le paramètre `departmentListName` est bien défini avec le nom de cette liste.
 
 #### Création du formulaire d'association entre régions et départements
 

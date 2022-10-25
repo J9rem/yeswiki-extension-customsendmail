@@ -11,6 +11,7 @@
 
 namespace YesWiki\Customsendmail\Service;
 
+use Configuration;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use YesWiki\Bazar\Field\CheckboxField;
 use YesWiki\Bazar\Field\CheckboxEntryField;
@@ -20,6 +21,7 @@ use YesWiki\Bazar\Field\RadioEntryField;
 use YesWiki\Bazar\Field\SelectEntryField;
 use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Bazar\Service\FormManager;
+use YesWiki\Bazar\Service\ListManager;
 use YesWiki\Core\Service\AclService;
 use YesWiki\Core\Service\PageManager;
 use YesWiki\Core\Service\UserManager;
@@ -28,15 +30,25 @@ use YesWiki\Wiki;
 
 class CustomSendMailService
 {
+    public const FRENCH_DEPARTMENTS_TITLE = "Départements français";
+    public const FRENCH_DEPARTMENTS_LIST_NAME = "ListeDepartementsFrancais";
+    public const FRENCH_AREAS_TITLE = "Régions françaises";
+    public const FRENCH_AREAS_LIST_NAME = "ListeRegionsFrancaises";
     public const KEY_FOR_PARENTS = "bf-custom-send-mail-parents";
     public const KEY_FOR_AREAS = "bf-custom-send-mail-areas";
 
     protected $aclService;
+    protected $areaAssociationCache;
+    protected $areaAssociationForm;
     protected $entryManager;
+    protected $departmentList;
+    protected $departmentListName;
     protected $formManager;
     protected $groupManagementService;
+    protected $listManager;
     protected $pageManager;
     protected $params;
+    protected $postalCodeFieldName;
     protected $userManager;
     protected $wiki;
 
@@ -45,17 +57,24 @@ class CustomSendMailService
         EntryManager $entryManager,
         FormManager $formManager,
         GroupManagementServiceInterface $groupManagementService,
+        ListManager $listManager,
         PageManager $pageManager,
         ParameterBagInterface $params,
         UserManager $userManager,
         Wiki $wiki
     ) {
         $this->aclService = $aclService;
+        $this->areaAssociationCache = null;
+        $this->areaAssociationForm = null;
+        $this->departmentList = null;
+        $this->departmentListName = null;
         $this->entryManager = $entryManager;
         $this->formManager = $formManager;
         $this->groupManagementService = $groupManagementService;
+        $this->listManager = $listManager;
         $this->pageManager = $pageManager;
         $this->params = $params;
+        $this->postalCodeFieldName = null;
         $this->userManager = $userManager;
         $this->wiki = $wiki;
     }
@@ -123,7 +142,7 @@ class CustomSendMailService
                                 }
                             }
                             if ($mode == "members_and_profiles_in_area" && !empty($formData['area'])) {
-                                $this->processAreas($entry, $results, $formData['area']['field'], $areas, $formData['form'], $suffix, $user, $callback, $appendDisplayData);
+                                $this->processAreas($entry, $results, $formData, $areas, $suffix, $user, $callback, $appendDisplayData);
                             }
                         }
                     }
@@ -147,7 +166,7 @@ class CustomSendMailService
      * @param scalar $formId
      * @param array &$formCache
      * @param null|EnumField $fieldForArea
-     * @return array ['form'=>array'enumEntryFields'=>array,'area' => ['name'=> string,'field'=>EnumField]]
+     * @return array ['form'=>array'enumEntryFields'=>array,'area' => ['name'=> string,'field'=>EnumField],'association'=>?EnumField]
      */
     private function extractFields($formId, array &$formCache, $fieldForArea): array
     {
@@ -161,17 +180,26 @@ class CustomSendMailService
             } else {
                 $formCache[$formId]['enumEntryFields'] = [];
                 $formCache[$formId]['area'] = [];
+                $formCache[$formId]['association'] = null;
+                $areaAssociationForm = $this->getAreaAssociationForm();
                 foreach ($formCache[$formId]['form']['prepared'] as $field) {
                     if ($field instanceof CheckboxEntryField ||
                         $field instanceof RadioEntryField ||
                         $field instanceof SelectEntryField) {
                         $formCache[$formId]['enumEntryFields'][] = $field;
                     }
-                    if ($fieldForArea && $field instanceof EnumField && $field->getLinkedObjectName() === $fieldForArea->getLinkedObjectName()) {
+                    if ($fieldForArea &&
+                        $field instanceof EnumField &&
+                        $field->getLinkedObjectName() === $fieldForArea->getLinkedObjectName()) {
                         $formCache[$formId]['area'] = [
                             'name' => $field->getPropertyName(),
                             'field' => $field
                         ];
+                    }
+                    if (!empty($areaAssociationForm['linkedObjectName']) &&
+                        $field instanceof EnumField &&
+                        $field->getLinkedObjectName() === $areaAssociationForm['linkedObjectName']) {
+                        $formCache[$formId]['association'] = $field;
                     }
                 }
             }
@@ -401,29 +429,62 @@ class CustomSendMailService
     protected function processAreas(
         array $entry,
         array &$results,
-        $field, // the right field corresponding to area
+        array $formData,
         array $areas,
-        ?array $form,
         ?string $suffix,
         $user,
         $callback,
-        bool $appendDisplayData = false
+        bool $appendDisplayData
     ) {
-        // same Area
         if (!empty($areas)) {
+            $validatedAreas = [];
+            $field = $formData['area']['field']; // the right field corresponding to area
+            // same Area
             if ($field instanceof CheckboxField) {
                 $currentAreas = $field->getValues($entry);
             } else {
                 $currentAreas = !empty($entry[$field->getPropertyName()]) ? [$entry[$field->getPropertyName()]] : [];
             }
-            $validatedAreas = array_filter($currentAreas, function ($area) use ($areas) {
-                return in_array($area, array_keys($areas));
+
+            // check administrative areas if $currentAreas is empty
+            if (empty($currentAreas) && !empty($formData['association'])) {
+                if ($formData['association'] instanceof CheckboxField) {
+                    $currentAdminAreas = ($formData['association'])->getValues($entry);
+                } else {
+                    $currentAdminAreas = !empty($entry[($formData['association'])->getPropertyName()]) ? [$entry[($formData['association'])->getPropertyName()]] : [];
+                }
+                $associations = $this->getAssociations();
+                foreach ($currentAdminAreas as $area) {
+                    if (!empty($associations['areas'][$area])) {
+                        foreach ($associations['areas'][$area] as $dept) {
+                            if (!in_array($dept, $currentAreas)) {
+                                $currentAreas[] = $dept;
+                            }
+                        }
+                    }
+                }
+            }
+
+            $listOfAreas = array_keys($areas);
+            $validatedAreas = array_filter($currentAreas, function ($area) use ($listOfAreas) {
+                return in_array($area, $listOfAreas);
             });
+
+            // check postal code than append
+            $areaFromPostalCode = $this->extractAreaFromPostalCode($entry);
+            if (!empty($areaFromPostalCode) &&
+                in_array($areaFromPostalCode, $listOfAreas) &&
+                !in_array($areaFromPostalCode, $validatedAreas)
+            ) {
+                $validatedAreas[] = $areaFromPostalCode;
+            }
+
+            // save areas
             if (!empty($validatedAreas)) {
                 $this->appendEntryWithData(
                     $entry,
                     $results,
-                    $form,
+                    $formData['form'],
                     $suffix,
                     $user,
                     $callback,
@@ -445,7 +506,7 @@ class CustomSendMailService
                         $this->appendEntryWithData(
                             $entry,
                             $results,
-                            $form,
+                            $formData['form'],
                             $suffix,
                             $user,
                             $callback,
@@ -457,8 +518,6 @@ class CustomSendMailService
                 }
             }
         }
-        // check postal code
-        // check group of areas
     }
 
     protected function appendEntryWithData(
@@ -518,5 +577,454 @@ class CustomSendMailService
             return ((!empty($parentOwner) && $parentOwner == $loggedUserName) ||
                 (!empty($groupAcl) && $this->aclService->check($groupAcl, $loggedUserName, true)));
         }
+    }
+
+    private function getPostalCodeFieldName(): string
+    {
+        if (is_null($this->postalCodeFieldName)) {
+            $this->postalCodeFieldName = $this->params->get('PostalCodeFieldName');
+            if (!is_string($this->postalCodeFieldName)) {
+                $this->postalCodeFieldName = "";
+            }
+        }
+        return $this->postalCodeFieldName;
+    }
+
+    private function getDepartmentListName(): string
+    {
+        if (is_null($this->departmentListName)) {
+            $this->departmentListName = $this->params->get('departmentListName');
+            if (!is_string($this->departmentListName)) {
+                $this->departmentListName = "";
+            }
+        }
+        return $this->departmentListName;
+    }
+
+    private function getDepartmentList(): array
+    {
+        if (is_null($this->departmentList)) {
+            $departmentListName = $this->getDepartmentListName();
+            if (!empty($departmentListName)) {
+                $list = $this->listManager->getOne($departmentListName);
+                if (!empty($departmentListName['label'])) {
+                    $this->departmentList = $departmentListName['label'];
+                    return $this->departmentList;
+                }
+            }
+            $this->departmentList = [];
+        }
+        return $this->departmentList;
+    }
+
+    private function getFormIdAreaToDepartment(): string
+    {
+        $formId = $this->params->get('formIdAreaToDepartment');
+        return (!empty($formId) && (!is_scalar($formId) || strval($formId) != strval(intval($formId)) || intval($formId)<0))
+            ? strval($formId)
+            : "";
+    }
+
+    private function getAreaAssociationForm(): array
+    {
+        if (is_null($this->areaAssociationForm)) {
+            $this->areaAssociationForm = [];
+            $formId = $this->getFormIdAreaToDepartment();
+            $departmentListName = $this->getDepartmentListName();
+            if (!empty($formId) && !empty($departmentListName)) {
+                $form = $form->manager->getOne($formId);
+                if (!empty($form['prepared'])) {
+                    $areaField = null;
+                    $deptField = null;
+                    foreach ($form['prepared'] as $field) {
+                        if (!$areaField &&
+                            $field instanceof EnumField &&
+                            !empty($field->getLinkedObjectName()) &&
+                            $field->getLinkedObjectName() !== $departmentListName) {
+                            $areaField = $field;
+                        } elseif (!$deptField &&
+                            $field instanceof EnumField &&
+                            !empty($field->getLinkedObjectName()) &&
+                            $field->getLinkedObjectName() === $departmentListName) {
+                            $deptField = $field;
+                        }
+                    }
+                    if ($areaField && $deptField) {
+                        $this->areaAssociationForm = [
+                            'form' => $form,
+                            'field' => $areaField,
+                            'formId' => $formId,
+                            'linkedObjectName' => $field->getLinkedObjectName(),
+                            'deptField' => $deptField
+                        ];
+                    }
+                }
+            }
+        }
+        return $this->areaAssociationForm;
+    }
+
+    private function getAssociations(): array
+    {
+        if (is_null($this->areaAssociationCache)) {
+            $this->areaAssociationCache = [];
+            $formData = $this->getAreaAssociationForm();
+            if (!empty($formData)) {
+                $entries = $this->entryManager->search([
+                    'formsIds' => [$formData['formId']]
+                ]);
+                if (!empty($entries)) {
+                    $areaPropName = ($formData['field'])->getPropertyName();
+                    $deptPropName = ($formData['deptField'])->getPropertyName();
+                    foreach ($entries as $entry) {
+                        $area = (!empty($entry[$areaPropName]) && is_string($areaPropName))
+                            ? explode(',', $entry[$areaPropName])[0]
+                            : "";
+                        if (!empty($area)) {
+                            $depts = (!empty($entry[$deptPropName]) && is_string($deptPropName))
+                                ? explode(',', $entry[$deptPropName])
+                                : [];
+                            foreach ($depts as $dept) {
+                                if (!isset($this->areaAssociationCache['areas'])) {
+                                    $this->areaAssociationCache['areas'] = [];
+                                }
+                                if (!isset($this->areaAssociationCache['areas'][$area])) {
+                                    $this->areaAssociationCache['areas'][$area] = [];
+                                }
+                                if (!in_array($dept, $this->areaAssociationCache['areas'][$area])) {
+                                    $this->areaAssociationCache['areas'][$area][] = $dept;
+                                }
+                                if (!isset($this->areaAssociationCache['depts'])) {
+                                    $this->areaAssociationCache['depts'] = [];
+                                }
+                                if (!isset($this->areaAssociationCache['depts'][$dept])) {
+                                    $this->areaAssociationCache['depts'][$dept] = [];
+                                }
+                                if (!in_array($area, $this->areaAssociationCache['depts'][$dept])) {
+                                    $this->areaAssociationCache['depts'][$dept][] = $area;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return $this->areaAssociationCache;
+    }
+
+    private function extractAreaFromPostalCode(array $entry): string
+    {
+        $departmentList = $this->getDepartmentList();
+        if (!empty($departmentList)) {
+            $postalCodeName = $this->getPostalCodeFieldName();
+            $postalCode = (empty($entry[$postalCodeName]) || !is_string($entry[$postalCodeName])) ? '' : $entry[$postalCodeName];
+            $postalCode = str_replace(" ", "", trim($postalCode));
+            if (strlen($postalCode) === 5) {
+                $twoChars = sub_str($postalCode, 0, 2);
+                if (!empty($departmentList[$twoChars])) {
+                    return $twoChars;
+                }
+                $threeChars = sub_str($postalCode, 0, 3);
+                if (!empty($departmentList[$threeChars])) {
+                    return $threeChars;
+                }
+            }
+        }
+        return "" ;
+    }
+
+    /**
+     * @return array ['success' => bool, 'error' => string]
+     */
+    public function createDepartements(): array
+    {
+        $success = false;
+        $error = '';
+
+        $list = $this->listManager->getOne(self::FRENCH_DEPARTMENTS_LIST_NAME);
+        if (!empty($list)) {
+            $error = "not possible to create list of departments : '".self::FRENCH_DEPARTMENTS_LIST_NAME."' is alreadyExisting !";
+            $success = false;
+        } else {
+            $this->listManager->create(self::FRENCH_DEPARTMENTS_TITLE, [
+                "1"=> "Ain",
+                "2"=> "Aisne",
+                "3"=> "Allier",
+                "4"=> "Alpes-de-Haute-Provence",
+                "5"=> "Hautes-Alpes",
+                "6"=> "Alpes-Maritimes",
+                "7"=> "Ardèche",
+                "8"=> "Ardennes",
+                "9"=> "Ariège",
+                "10"=> "Aube",
+                "11"=> "Aude",
+                "12"=> "Aveyron",
+                "13"=> "Bouches-du-Rhône",
+                "14"=> "Calvados",
+                "15"=> "Cantal",
+                "16"=> "Charente",
+                "17"=> "Charente-Maritime",
+                "18"=> "Cher",
+                "19"=> "Corrèze",
+                "2A"=> "Corse-du-Sud",
+                "2B"=> "Haute-Corse",
+                "21"=> "Côte-d'Or",
+                "22"=> "Côtes-d'Armor",
+                "23"=> "Creuse",
+                "24"=> "Dordogne",
+                "25"=> "Doubs",
+                "26"=> "Drôme",
+                "27"=> "Eure",
+                "28"=> "Eure-et-Loir",
+                "29"=> "Finistère",
+                "30"=> "Gard",
+                "31"=> "Haute-Garonne",
+                "32"=> "Gers",
+                "33"=> "Gironde",
+                "34"=> "Hérault",
+                "35"=> "Ille-et-Vilaine",
+                "36"=> "Indre",
+                "37"=> "Indre-et-Loire",
+                "38"=> "Isère",
+                "39"=> "Jura",
+                "40"=> "Landes",
+                "41"=> "Loir-et-Cher",
+                "42"=> "Loire",
+                "43"=> "Haute-Loire",
+                "44"=> "Loire-Atlantique",
+                "45"=> "Loiret",
+                "46"=> "Lot",
+                "47"=> "Lot-et-Garonne",
+                "48"=> "Lozère",
+                "49"=> "Maine-et-Loire",
+                "50"=> "Manche",
+                "51"=> "Marne",
+                "52"=> "Haute-Marne",
+                "53"=> "Mayenne",
+                "54"=> "Meurthe-et-Moselle",
+                "55"=> "Meuse",
+                "56"=> "Morbihan",
+                "57"=> "Moselle",
+                "58"=> "Nièvre",
+                "59"=> "Nord",
+                "60"=> "Oise",
+                "61"=> "Orne",
+                "62"=> "Pas-de-Calais",
+                "63"=> "Puy-de-Dôme",
+                "64"=> "Pyrénnées-Atlantiques",
+                "65"=> "Hautes-Pyrénnées",
+                "66"=> "Pyrénnées-Orientales",
+                "67"=> "Bas-Rhin",
+                "68"=> "Haut-Rhin",
+                "69"=> "Rhône",
+                "70"=> "Haute-Saône",
+                "71"=> "Saône-et-Loire",
+                "72"=> "Sarthe",
+                "73"=> "Savoie",
+                "74"=> "Haute-Savoie",
+                "75"=> "Paris",
+                "76"=> "Seine-Maritime",
+                "77"=> "Seine-et-Marne",
+                "78"=> "Yvelines",
+                "79"=> "Deux-Sèvres",
+                "80"=> "Somme",
+                "81"=> "Tarn",
+                "82"=> "Tarn-et-Garonne",
+                "83"=> "Var",
+                "84"=> "Vaucluse",
+                "85"=> "Vendée",
+                "86"=> "Vienne",
+                "87"=> "Haute-Vienne",
+                "88"=> "Vosges",
+                "89"=> "Yonne",
+                "90"=> "Territoire-de-Belfort",
+                "91"=> "Essonne",
+                "92"=> "Hauts-de-Seine",
+                "93"=> "Seine-Saint-Denis",
+                "94"=> "Val-de-Marne",
+                "95"=> "Val-d'Oise",
+                "99"=> "Etranger",
+                "971"=> "Guadeloupe",
+                "972"=> "Martinique",
+                "973"=> "Guyane",
+                "974"=> "Réunion",
+                "975"=> "St-Pierre-et-Miquelon",
+                "976"=> "Mayotte",
+                "977"=> "Saint-Barthélemy",
+                "978"=> "Saint-Martin",
+                "986"=> "Wallis-et-Futuna",
+                "987"=> "Polynésie-Francaise",
+                "988"=> "Nouvelle-Calédonie"
+            ]);
+            $list = $this->listManager->getOne(self::FRENCH_DEPARTMENTS_LIST_NAME);
+            $success = !empty($list);
+            if (!$success) {
+                $error = "not possible to create list of departments : '".self::FRENCH_DEPARTMENTS_LIST_NAME."' error during creation !";
+            }
+        }
+        return compact(['success','error']);
+    }
+
+    /**
+     * @return array ['success' => bool, 'error' => string]
+     */
+    public function createAreas(): array
+    {
+        $success = false;
+        $error = '';
+
+        $list = $this->listManager->getOne(self::FRENCH_AREAS_LIST_NAME);
+        if (!empty($list)) {
+            $error = "not possible to create list of areas : '".self::FRENCH_AREAS_LIST_NAME."' is alreadyExisting !";
+            $success = false;
+        } else {
+            // CODE ISO 3166-2
+            $this->listManager->create(self::FRENCH_AREAS_TITLE, [
+                "ARA"=> "Auvergne-Rhône-Alpes",
+                "BFC"=> "Bourgogne-Franche-Comté",
+                "BRE"=> "Bretagne",
+                "CVL"=> "Centre-Val de Loire",
+                "COR"=> "Corse",
+                "GES"=> "Grand Est",
+                "HDF"=> "Hauts-de-France",
+                "IDF"=> "Île-de-France",
+                "NOR"=> "Normandie",
+                "NAQ"=> "Nouvelle-Aquitaine",
+                "OCC"=> "Occitanie",
+                "PDL"=> "Pays de la Loire",
+                "PAC"=> "Provence-Alpes-Côte d'Azur",
+                "GUA"=> "Guadeloupe",
+                "GUF"=> "Guyane",
+                "LRE"=> "La Réunion",
+                "MTQ"=> "Martinique",
+                "MAY"=> "Mayotte",
+                "COM"=> "Collectivités d'outre-mer",
+            ]);
+            $list = $this->listManager->getOne(self::FRENCH_AREAS_LIST_NAME);
+            $success = !empty($list);
+            if (!$success) {
+                $error = "not possible to create list of areas : '".self::FRENCH_AREAS_LIST_NAME."' error during creation !";
+            }
+        }
+        return compact(['success','error']);
+    }
+
+
+    /**
+     * @return array ['success' => bool, 'error' => string]
+     */
+    public function createFormToAssociateAreasAndDepartments(): array
+    {
+        $success = false;
+        $error = '';
+
+        $formId = $this->params->get('formIdAreaToDepartment');
+        if (!empty($formId) && empty($this->getFormIdAreaToDepartment())) {
+            $error = 'parameter \'formIdAreaToDepartment\' is defined but with a bad format !';
+        } elseif (!empty($formId)) {
+            $form = $this->formManager->getOne($formId);
+            if (!empty($form)) {
+                $error = 'not possible to create the form because already existing !';
+            }
+        }
+        if (empty($error)) {
+            $listDept = $this->listManager->getOne(self::FRENCH_DEPARTMENTS_LIST_NAME);
+            if (empty($listDept) && ($res = $this->createDepartements()) && !$res['success']) {
+                $error = $res['error'];
+            }
+        }
+        if (empty($error)) {
+            $listArea = $this->listManager->getOne(self::FRENCH_AREAS_LIST_NAME);
+            if (empty($listArea) && ($res = $this->createAreas()) && !$res['success']) {
+                $error = $res['error'];
+            }
+        }
+        if (empty($error)) {
+            $deptListName = self::FRENCH_DEPARTMENTS_LIST_NAME;
+            $arealistName = self::FRENCH_AREAS_LIST_NAME;
+            if (empty($formId)) {
+                $formId = $this->formManager->findNewId();
+            }
+            $form = $this->formManager->create([
+                'bn_id_nature' => $formId,
+                'bn_label_nature' => 'Correspondance régions - départements',
+                'bn_template' =>
+                <<<TXT
+                titre***Départements de {{bf_region}}***Titre Automatique***
+                liste***$arealistName***Région*** *** *** ***bf_region*** ***1*** *** *** * *** * *** *** *** ***
+                checkbox***$deptListName***Départements*** *** *** ***bf_departement*** ***1*** *** *** * *** * *** *** *** ***
+                acls*** * ***@admins***comments-closed***
+                TXT,
+                'bn_description' => '',
+                'bn_sem_context' => '',
+                'bn_sem_type' => '',
+                'bn_condition' => ''
+            ]);
+            $form = $this->formManager->getOne($formId);
+            if (empty($form)) {
+                $error = "not possible to create the form : error during creation !";
+            } else {
+                $this->saveFormIdInConfig($formId);
+                $this->createEntriesForAssociation($formId);
+                $success = true;
+            }
+        }
+        return compact(['success','error']);
+    }
+
+    private function saveFormIdInConfig($formId)
+    {
+        // default acls in wakka.config.php
+        include_once 'tools/templates/libs/Configuration.php';
+        $config = new Configuration('wakka.config.php');
+        $config->load();
+
+        $baseKey = 'formIdAreaToDepartment';
+        $config->$baseKey = $formId;
+        $config->write();
+        unset($config);
+    }
+
+    private function createEntriesForAssociation($formId)
+    {
+        foreach ([
+            'ARA' => "1,3,7,15,26,38,42,43,63,69,73,74",
+            'BFC' => "21,25,39,58,70,71,89,90",
+            'BRE' => "22,29,35,44,56",
+            "CVL" => "18,28,36,37,41,45",
+            "COR" => "2A,2B",
+            "GES" => "8,10,51,52,54,55,57,67,68,88",
+            "HDF" => "2,59,60,62,80",
+            "IDF" => "75,77,78,91,92,93,94,95",
+            "NOR" => "14,27,50,61,76",
+            "NAQ" => "16,17,19,23,24,33,40,47,64,79,86,87",
+            "OCC" => "9,11,12,30,31,32,34,46,48,65,66,81,82",
+            "PDL" => "44,49,53,72,85",
+            "PAC" => "4,5,6,13,83,84",
+            "GUA" => "971",
+            "GUF" => "973",
+            "LRE" => "974",
+            "MTQ" => "972",
+            "MAY" => "976",
+            "COM" => "975,977,978,986,987",
+        ] as $areaCode => $depts) {
+            $this->entryManager->create(
+                $formId,
+                [
+                    'antispam' => 1,
+                    'bf_titre' => "Départements de {{bf_region}}",
+                    'liste'.self::FRENCH_AREAS_LIST_NAME.'bf_region' => $areaCode,
+                    'checkbox'.self::FRENCH_DEPARTMENTS_LIST_NAME.'bf_departement' => $depts,
+                ],
+            );
+        }
+    }
+
+    private function extractDepartmentFromAdminAreas(array $areasarray): array
+    {
+        $departments = [];
+        foreach ($areasarray as $area) {
+        }
+        return $departments;
     }
 }

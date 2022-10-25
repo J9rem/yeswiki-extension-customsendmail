@@ -3,6 +3,7 @@ parameters:
   default-sender-email: ''
   AreaFieldName: ''
   PostalCodeFieldName: 'bf_code_postal'
+  departmentListName: 'ListeDepartementsFrancais'
   formIdAreaToDepartment: ''
   customsendmail_editable_config_params:
    - 'GroupsAdminsSuffixForEmails'
