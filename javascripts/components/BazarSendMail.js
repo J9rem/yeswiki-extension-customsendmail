@@ -623,6 +623,7 @@ let componentParams = {
                         </button>
                         <slot name="textarea"/>
                         <div class="clearfix"></div>
+                        <div class="form-group" v-if="!sendToGroup"><slot name="help"/></div>
                         <button src="#" class="btn btn-xl btn-primary" @click.prevent.stop="sendmail" :disabled="sendingMail" :style="sendingMail ? {cursor:'wait'} : false">
                             <slot name="sendmail"/>
                         </button>

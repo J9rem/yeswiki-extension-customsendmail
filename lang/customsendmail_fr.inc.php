@@ -69,4 +69,10 @@ return [
     'CUSTOMSENDMAIL_SECURITY_HIDDEN' => 'masqué par sécurité',
     'CUSTOMSENDMAIL_SEE' => 'Voir les paramètres avancés',
     'CUSTOMSENDMAIL_HIDE' => 'Masquer les paramètres avancés',
+    'CUSTOMSENDMAIL_HELP' => "Pour les envois non groupés :\n".
+        "{entryLink} => lien vers la fiche brut\n".
+        "{entryLinkWithTitle} => lien vers la fiche avec son titre\n".
+        "{entryLinkWithText} => lien vers la fiche avec le texte \"Voir la fiche xxx\"\n".
+        "{entryEditLink} => lien vers la modification de la fiche (brut)\n".
+        "{entryEditLinkWithText} => lien vers la modification de la fiche (avec le titre \"Modifier la fiche\")\n",
 ];
