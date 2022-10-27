@@ -209,6 +209,17 @@ class CustomSendMailService
 
     public function displayEmailIfAdminOfParent(array $entries, ?array $arg): array
     {
+        $selectmembers = (
+            !empty($arg['selectmembers']) &&
+                is_string($arg['selectmembers']) &&
+                in_array($arg['selectmembers'], ["only_members","members_and_profiles_in_area"], true)
+        ) ? $arg['selectmembers'] : "";
+        $selectmembersparentform = (
+            !empty($arg['selectmembersparentform']) &&
+                strval($arg['selectmembersparentform']) == strval(intval($arg['selectmembersparentform'])) &&
+                intval($arg['selectmembersparentform']) > 0
+        ) ? $arg['selectmembersparentform'] : "";
+
         $selectmembersdisplayfilters = (
             !empty($arg['selectmembersdisplayfilters']) &&
             in_array($arg['selectmembersdisplayfilters'], [true,1,"1","true"], true)
@@ -219,8 +230,8 @@ class CustomSendMailService
         $filteredEntries = $this->filterEntriesFromParents(
             $entriesIds,
             false,
-            "only_members",
-            "",
+            $selectmembers,
+            $selectmembersparentform,
             function (array $entry, array $form, string $suffix, $user) use (&$entries, $entriesIds) {
                 $entryKey = array_search($entry['id_fiche'] ?? '', $entriesIds);
                 if ($entryKey !== false) {
