@@ -618,9 +618,9 @@ class CustomSendMailService
             $id
         );
 
-        return array_filter(array_map(function ($entryId) {
-            return $this->groupManagementService->getParent($id, $entryId);
-        }, $parentsWhereAdminIds), function ($entry) {
+        return array_filter(array_map(function ($entryId) use ($id) {
+            return empty($entryId) ? null : $this->groupManagementService->getParent($id, $entryId);
+        }, $parentsWhereAdminIds), function ($entry) use ($loggedUserName) {
             return !empty($entry) && !empty($entry['id_fiche']) && $this->aclService->hasAccess('read', $entry['id_fiche'], $loggedUserName);
         });
     }
