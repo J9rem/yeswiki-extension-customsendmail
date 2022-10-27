@@ -14,4 +14,5 @@ return [
     // javascripts/send-mail.js
     'CUSTOMSENDMAIL_EMAIL_SENT' => 'Emails(s) envoyés (pour {details})',
     'CUSTOMSENDMAIL_EMAIL_NOT_SENT' => 'Emails(s) non envoyés {errorMsg}',
+    'CUSTOMSENDMAIL_EMAIL_SEND' => 'Envoyer le message ?',
 ];

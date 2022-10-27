@@ -19,7 +19,7 @@ let componentParams = {
         return {
             addContactsToReplyTo: false,
             addSenderToContact: true,
-            addSenderToReplyTo: true,
+            addSenderToReplyTo: !this.hascontactfrom,
             advancedParamsVisibles: false,
             availableEntries: [],
             bsEventInit: false,
@@ -291,12 +291,14 @@ let componentParams = {
                 senderEmail: this.senderEmail,
                 subject: this.subject,
                 contacts: this.selectedAddresses.filter((id)=>availableIds.includes(id)),
-                addsendertocontact: this.addSenderTocCntact,
+                addsendertocontact: this.addSenderToContact,
                 sendtogroup: this.sendToGroup,
                 addsendertoreplyto: this.addSenderToReplyTo,
                 addcontactstoreplyto: this.addContactsToReplyTo,
                 receivehiddencopy: this.receiveHiddenCopy,
-                emailfieldname: this.emailfieldname
+                emailfieldname: this.emailfieldname,
+                selectmembers: this.params.selectmembers || '',
+                selectmembersparentform: this.params.selectmembersparentform || '',
             };
         },
         loadSummernoteWithLang: function (){
@@ -402,17 +404,16 @@ let componentParams = {
             if (this.sendingMail){
                 return ;
             }
+            let dataToSend= this.getData();
+            dataToSend.message = this.getContentsForUpdate();
+            if (dataToSend.subject.length == 0 || 
+                dataToSend.senderEmail.length == 0 ||
+                dataToSend.emailfieldname.length == 0){
+                this.sendingMail = false;
+                return ;
+            }
             this.sendingMail = true;
-            if (confirm("OK")){
-                let dataToSend= this.getData();
-                dataToSend.message = this.getContentsForUpdate();
-                if (dataToSend.subject.length == 0 || 
-                    dataToSend.senderEmail.length == 0 ||
-                    dataToSend.emailfieldname.length == 0){
-                    this.sendingMail = false;
-                    return ;
-                }
-                
+            if (confirm(_t('CUSTOMSENDMAIL_EMAIL_SEND'))){
                 // 1. Create a new XMLHttpRequest object
                 let xhr = new XMLHttpRequest();
                 // 2. Configure it: POST-request
@@ -461,6 +462,8 @@ let componentParams = {
                 };
                 // 5. Send the request over the network
                 xhr.send(data);
+            } else {
+                this.sendingMail = false;
             }
         }
     },
@@ -526,6 +529,9 @@ let componentParams = {
         addSenderToReplyTo(){
             this.secureUpdatePreview();
         },
+        addContactsToReplyTo(){
+            this.secureUpdatePreview();
+        },
         receiveHiddenCopy(){
             this.secureUpdatePreview();
         }
@@ -582,7 +588,7 @@ let componentParams = {
                         <div :id="'advanced-params-'+this.uid" class="collapse" ref="advancedParams">
                             <div class="form-group">
                                 <label class="no-dblclick">
-                                    <input type="checkbox" @click="sendToGroup=!sendToGroup" :checked="sendToGroup">
+                                    <input type="checkbox" @click="sendToGroup=!sendToGroup;addContactsToReplyTo=sendToGroup?addContactsToReplyTo:false" :checked="sendToGroup">
                                     <span> <slot name="sendtogroup"/></span>
                                 </label>
                             </div>
@@ -600,7 +606,7 @@ let componentParams = {
                             </div>
                             <div class="form-group">
                                 <label class="no-dblclick">
-                                    <input type="checkbox" @click="addContactsToReplyTo=!addContactsToReplyTo" :checked="addContactsToReplyTo">
+                                    <input type="checkbox" @click="addContactsToReplyTo=!addContactsToReplyTo" :checked="addContactsToReplyTo" :disabled="!sendToGroup">
                                     <span> <slot name="addcontactstoreplyto"/></span>
                                 </label>
                             </div>
@@ -617,7 +623,7 @@ let componentParams = {
                         </button>
                         <slot name="textarea"/>
                         <div class="clearfix"></div>
-                        <button class="btn btn-xl btn-primary" @click="sendmail" :disabled="sendingMail" :style="{cursor:(sendingMail ? 'wait' : false)}">
+                        <button src="#" class="btn btn-xl btn-primary" @click.prevent.stop="sendmail" :disabled="sendingMail" :style="sendingMail ? {cursor:'wait'} : false">
                             <slot name="sendmail"/>
                         </button>
                         <br/>

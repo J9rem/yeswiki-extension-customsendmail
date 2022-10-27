@@ -1,4 +1,5 @@
 <?php
+
 return [
     /*
  * This file is part of the YesWiki Extension customsendmail.
@@ -11,4 +12,5 @@ return [
     // javascripts/send-mail.js
     'CUSTOMSENDMAIL_EMAIL_SENT' => 'Sent emails (for{details})',
     'CUSTOMSENDMAIL_EMAIL_NOT_SENT' => 'Not sent emails {errorMsg}',
+    'CUSTOMSENDMAIL_EMAIL_SEND' => 'Send message ?',
 ];
