@@ -17,29 +17,30 @@ let componentParams = {
     components: { SpinnerLoader},
     data: function() {
         return {
-            cacheEntriesDisplay: {},
-            updatingIds: [],
-            uid: "",
+            addContactsToReplyTo: false,
+            addSenderToContact: true,
+            addSenderToReplyTo: true,
+            advancedParamsVisibles: false,
             availableEntries: [],
+            bsEventInit: false,
+            cacheEntriesDisplay: {},
             checkAll: false,
+            emailfieldname: "bf_mail",
+            htmlPreview: "",
+            nextContentForPreview: [],
+            nextPreviewTobeRetrieved: false,
+            receiveHiddenCopy: false,
             selectedAddresses: [],
-            senderName: "",
+            sendToGroup: true,
             senderEmail: "",
+            senderName: "",
+            sendingMail: false,
+            sizePreview: "",
             subject: "",
             summernoteInit: false,
-            updatingPreview: false,
-            nextPreviewTobeRetrieved: false,
-            nextContentForPreview: [],
-            addSenderToContact: true,
-            sendToGroup: true,
-            addSenderToReplyTo: true,
-            addContactsToReplyTo: false,
-            receiveHiddenCopy: false,
-            htmlPreview: "",
-            sizePreview: "",
-            advancedParamsVisibles: false,
-            bsEventInit: false,
-            sendingMail: false
+            uid: "",
+            updatingIds: [],
+            updatingPreview: false
         };
     },
     methods: {
@@ -294,7 +295,8 @@ let componentParams = {
                 sendtogroup: this.sendToGroup,
                 addsendertoreplyto: this.addSenderToReplyTo,
                 addcontactstoreplyto: this.addContactsToReplyTo,
-                receivehiddencopy: this.receiveHiddenCopy
+                receivehiddencopy: this.receiveHiddenCopy,
+                emailfieldname: this.emailfieldname
             };
         },
         loadSummernoteWithLang: function (){
@@ -404,7 +406,9 @@ let componentParams = {
             if (confirm("OK")){
                 let dataToSend= this.getData();
                 dataToSend.message = this.getContentsForUpdate();
-                if (dataToSend.subject.length == 0 || dataToSend.senderEmail.length){
+                if (dataToSend.subject.length == 0 || 
+                    dataToSend.senderEmail.length == 0 ||
+                    dataToSend.emailfieldname.length == 0){
                     this.sendingMail = false;
                     return ;
                 }
@@ -486,6 +490,7 @@ let componentParams = {
         },
         params(){
             this.subject = this.sanitizeString(this.params,'defaultsubject','');
+            this.emailfieldname = this.sanitizeString(this.params,'emailfieldname','bf_mail');
             this.$nextTick(()=>{
                 if (this.senderName.length == 0){
                     this.senderName = this.sanitizeString(this.params,'defaultsendername',"");
