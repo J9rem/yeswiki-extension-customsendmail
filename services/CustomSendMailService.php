@@ -256,7 +256,7 @@ class CustomSendMailService
         return $entries;
     }
 
-    public function updateFilters(?array $filters, ?string $renderedEntries, ?array $entries): array
+    public function updateFilters(?array $filters, ?string $renderedEntries, ?array $entries = null): array
     {
         if (!empty($renderedEntries)) {
             extract($this->getParentsAreasFromRender($renderedEntries));
