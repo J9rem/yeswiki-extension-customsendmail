@@ -121,7 +121,10 @@ class GroupController extends YesWikiController implements EventSubscriberInterf
                                         return $entryData;
                                     }, $contentDecoded['entries']);
                                     if (isset($contentDecoded['filters']) && is_array($contentDecoded['filters'])) {
-                                        $contentDecoded['filters'] = $this->customSendMailService->updateFilters($contentDecoded['filters'], null, $entries);
+                                        $contentDecoded['filters'] = $this->customSendMailService->updateFilters($contentDecoded['filters'], null, $entries, [
+                                            'selectmembers' => $selectmembers,
+                                            'selectmembersparentform' => $_GET['selectmembersparentform'] ?? "",
+                                        ]);
                                     }
                                 }
 

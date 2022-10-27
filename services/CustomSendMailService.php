@@ -267,8 +267,18 @@ class CustomSendMailService
         return $entries;
     }
 
-    public function updateFilters(?array $filters, ?string $renderedEntries, ?array $entries = null): array
+    public function updateFilters(?array $filters, ?string $renderedEntries, ?array $entries = null, array $arg = []): array
     {
+        $selectmembers = (
+            !empty($arg['selectmembers']) &&
+                is_string($arg['selectmembers']) &&
+                in_array($arg['selectmembers'], ["only_members","members_and_profiles_in_area"], true)
+        ) ? $arg['selectmembers'] : "";
+        $selectmembersparentform = (
+            !empty($arg['selectmembersparentform']) &&
+                strval($arg['selectmembersparentform']) == strval(intval($arg['selectmembersparentform'])) &&
+                intval($arg['selectmembersparentform']) > 0
+        ) ? $arg['selectmembersparentform'] : "";
         if (!empty($renderedEntries)) {
             extract($this->getParentsAreasFromRender($renderedEntries));
         } elseif (!empty($entries)) {
@@ -311,22 +321,36 @@ class CustomSendMailService
             }
             $parentList = [];
             foreach ($formattedParents as $tagName => $formattedParent) {
+                $entry = $this->entryManager->getOne($tagName);
+                $label = empty($entry['bf_titre']) ? $tagName : $entry['bf_titre'];
                 $parentList[] = [
                     "id" => self::KEY_FOR_PARENTS.$tagName,
                     "name" => self::KEY_FOR_PARENTS,
                     "value" => $tagName,
-                    "label" => $tagName,
+                    "label" => $label,
                     "nb" => $formattedParent['nb'] ?? 0,
                     "checked" => (!empty($tabfacette[self::KEY_FOR_PARENTS]) && in_array($tagName, $tabfacette[self::KEY_FOR_PARENTS])) ? " checked" : ""
                 ];
             }
             $areaList = [];
+            $options = [];
+            if ($selectmembers == "members_and_profiles_in_area") {
+                $areaFieldName = $this->getAreaFieldName();
+                if (!empty($areaFieldName) && !empty($selectmembersparentform)) {
+                    $fieldForArea = $this->formManager->findFieldFromNameOrPropertyName($areaFieldName, $selectmembersparentform);
+                    if (!empty($fieldForArea)) {
+                        $options = $fieldForArea->getOptions();
+                    }
+                }
+            }
+            $areas = [];
             foreach ($formattedAreas as $tagName => $formattedArea) {
+                $label = empty($options[$tagName]) ? $tagName : $options[$tagName];
                 $areaList[] = [
                     "id" => self::KEY_FOR_AREAS.$tagName,
                     "name" => self::KEY_FOR_AREAS,
                     "value" => $tagName,
-                    "label" => $tagName,
+                    "label" => $label,
                     "nb" => $formattedArea['nb'] ?? 0,
                     "checked" => (!empty($tabfacette[self::KEY_FOR_PARENTS]) && in_array($tagName, $tabfacette[self::KEY_FOR_PARENTS])) ? " checked" : ""
                 ];
