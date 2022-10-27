@@ -1,0 +1,65 @@
+{#
+ * This file is part of the YesWiki Extension customsendmail.
+ *
+ * Authors : see README.md file that was distributed with this source code.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *#}
+
+{% extends "@bazar/entries/index-dynamic.twig" %}
+
+{% set necessary_fields = [] %}
+
+{% block assets %}
+  {{ include_css('tools/bazar/libs/vendor/summernote/summernote.css') }}
+  {{ include_css('tools/customsendmail/styles/send-mail.css') }} 
+  {{ include_javascript('tools/bazar/libs/vendor/summernote/summernote.min.js') }}
+  {{ include_javascript('tools/customsendmail/javascripts/components/BazarSendMail.js', false, true) }} 
+{% endblock %}
+
+{% block display_entries %}
+  {% if param.selectmembers is empty and not hasAcl("+") %}
+    {{ include("@templates/alert-message.twig",{type:"danger",message:"Template '#{_self}': " ~ _t('BAZ_NEED_ADMIN_RIGHTS')})}}
+  {% else %}
+    <Bazar-Send-Mail :params="params" :entries="entriesToDisplay" :ready="ready" :hascontactfrom="{{ (config.contact_from is not empty)|json_encode }}">
+      <template #title>{{ params.title|trim is not empty ? params.title : _t('CUSTOMSENDMAIL_DEFAULT_TITLE') }}</template>
+      <template #checkall>{{ _t('BAZAR_CHECKALL') }}</template>
+      <template #hascontactfrom>
+        {% if config.contact_from is not empty %}
+          <div class="form-group">
+            {{ include('@templates/alert-message.twig',{type:'info',message:_t('CUSTOMSENDMAIL_HASCONTACTFROM',{'forcedFrom':hasAcl("@admins") ? config.contact_from : "***.***@***.*** (#{_t('CUSTOMSENDMAIL_SECURITY_HIDDEN')})"})|nl2br}) }}
+          </div>
+        {% endif %}
+      </template>
+      <template #sendername>{{ _t('CUSTOMSENDMAIL_SENDERNAME') }}</template>
+      <template #senderemail>{{ _t('CUSTOMSENDMAIL_SENDEREMAIL') }}</template>
+      <template #defaultsenderemail>{{ (hasAcl("@admins") and config['default-sender-email'])? config['default-sender-email'] : "" }}</template>
+      <template #defaultsubject>{{ _t('CUSTOMSENDMAIL_MESSAGE_SUBJECT') }}</template>
+      <template #subjectplaceholder>{{ _t('CUSTOMSENDMAIL_MESSAGE_SUBJECT_PLACEHOLDER') }}</template>
+      <template #sendtogroup>{{ _t('CUSTOMSENDMAIL_SENDTOGROUP') }}</template>
+      <template #addsendertocontact>{{ _t('CUSTOMSENDMAIL_ADDSENDERTOCONTACT') }}</template>
+      <template #addsendertoreplyto>{{ _t('CUSTOMSENDMAIL_ADDSENDERTOREPLYTO') }}</template>
+      <template #addcontactstoreplyto>{{ _t('CUSTOMSENDMAIL_ADDCONTACTSTOREPLYTO') }}</template>
+      <template #receivehiddencopy>{{ _t('CUSTOMSENDMAIL_RECEIVEHIDDENCOPY') }}</template>
+      <template #textarea>{{ include("@bazar/inputs/textarea.twig",{
+            field: {
+              label: _t('CUSTOMSENDMAIL_MESSAGE'),
+              name: "message",
+              syntax: "html",
+              numRows: 10,
+              type: "textarea"
+            },
+            value: (params.defaultcontent|trim is not empty 
+              ? params.defaultcontent|striptags('<br><p><hr><i><b><strong><em><div><span>') 
+              :_t('CUSTOMSENDMAIL_SENDMAIL_DEFAULTCONTENT'))|raw ,
+          }) }}
+      </template>
+      <template #sendmail>{{ _t('CUSTOMSENDMAIL_SENDMAIL') }}</template>
+      <template #preview>{{ _t('CUSTOMSENDMAIL_PREVIEW') }}</template>
+      <template #previewsize>{{ _t('CUSTOMSENDMAIL_SIZE') }}</template>
+      <template #see><span class="fas fa-angle-down"></span> {{ _t('CUSTOMSENDMAIL_SEE') }}</template>
+      <template #hide><span class="fas fa-angle-up"></span> {{ _t('CUSTOMSENDMAIL_HIDE') }}</template>
+    </Bazar-Send-Mail>
+  {% endif %}
+{% endblock %}

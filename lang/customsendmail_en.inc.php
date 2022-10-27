@@ -64,4 +64,9 @@ return [
     'CUSTOMSENDMAIL_ADDCONTACTSTOREPLYTO' => 'Add addresses in "Reply to" (only for group sending)',
     'CUSTOMSENDMAIL_RECEIVEHIDDENCOPY' => 'Receive a hidden copy',
     'CUSTOMSENDMAIL_SENDTOGROUP' => 'Send a group email (everyone sees the complete list of addresses)',
+    'CUSTOMSENDMAIL_HASCONTACTFROM' => "Warning this wiki forces sender to %{forcedFrom}\n".
+        "(sender's email is moved to \"Reply to\")",
+    'CUSTOMSENDMAIL_SECURITY_HIDDEN' => 'hidden by security',
+    'CUSTOMSENDMAIL_SEE' => 'See advanced parameters',
+    'CUSTOMSENDMAIL_HIDE' => 'Hide advanced parameters',
 ];

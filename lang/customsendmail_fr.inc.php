@@ -64,4 +64,9 @@ return [
     'CUSTOMSENDMAIL_ADDCONTACTSTOREPLYTO' => 'Ajouter les destinataires dans "Répondre à" (uniquement pour les envois groupés)',
     'CUSTOMSENDMAIL_RECEIVEHIDDENCOPY' => 'Recevoir une copie cachée',
     'CUSTOMSENDMAIL_SENDTOGROUP' => 'Faire un envoi groupé (tout le monde voit la liste de destinataires)',
+    'CUSTOMSENDMAIL_HASCONTACTFROM' => "Attention, ce wiki force l'expéditeur des e-mails à %{forcedFrom}\n".
+        "(l'e-mail de l'expéditeur est déplacé dans \"Répondre à\")",
+    'CUSTOMSENDMAIL_SECURITY_HIDDEN' => 'masqué par sécurité',
+    'CUSTOMSENDMAIL_SEE' => 'Voir les paramètres avancés',
+    'CUSTOMSENDMAIL_HIDE' => 'Masquer les paramètres avancés',
 ];

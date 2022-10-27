@@ -21,8 +21,13 @@ class __BazarListeAction extends YesWikiAction
 {
     public function formatArguments($arg)
     {
+        $newArg = [];
+        if (!empty($arg['template']) && $arg['template'] == "send-mail"){
+            $newArg['dynamic'] = true;
+            $arg['dynamic'] = true;
+        }
         if (!$this->wiki->services->has(GroupController::class)) {
-            return [];
+            return $newArg;
         } else {
             $selectmembers = (
                 !empty($arg['selectmembers']) &&
@@ -35,7 +40,7 @@ class __BazarListeAction extends YesWikiAction
                 in_array($arg['selectmembersdisplayfilters'], [true,1,"1","true"], true)
             );
 
-            return $this->getService(GroupController::class)->defineBazarListeActionParams(
+            return $newArg + $this->getService(GroupController::class)->defineBazarListeActionParams(
                 $arg,
                 $_GET ?? [],
                 function (bool $isDynamic, bool $isAdmin, array $_arg) use ($selectmembers, $selectmembersdisplayfilters) {

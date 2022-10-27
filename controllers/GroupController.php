@@ -57,7 +57,11 @@ class GroupController extends YesWikiController implements EventSubscriberInterf
 
     public function keepOnlyFilteredEntriesFromParentsAfter($event)
     {
-        if (!$this->wiki->UserIsAdmin()) {
+        $selectmembersdisplayfilters = (
+            !empty($_GET['selectmembersdisplayfilters']) &&
+            in_array($_GET['selectmembersdisplayfilters'], [true,1,"1","true"], true)
+        );
+        if (!$this->wiki->UserIsAdmin() || $selectmembersdisplayfilters) {
             $selectmembers = (
                 !empty($_GET['selectmembers']) &&
                     is_string($_GET['selectmembers']) &&
@@ -94,7 +98,7 @@ class GroupController extends YesWikiController implements EventSubscriberInterf
                                 $entries = $this->filterEntriesFromParents($entries, [
                                     'selectmembers' => $selectmembers,
                                     'selectmembersparentform' => $_GET['selectmembersparentform'] ?? "",
-                                    'selectmembersdisplayfilters' => $_GET['selectmembersdisplayfilters'] ?? false,
+                                    'selectmembersdisplayfilters' => $selectmembersdisplayfilters,
                                     'id' => $_GET['idtypeannonce'] ?? ""
                                 ]);
                                 $entriesIds = array_map(function ($entry) {
@@ -103,6 +107,24 @@ class GroupController extends YesWikiController implements EventSubscriberInterf
                                 $contentDecoded['entries'] = array_values(array_filter($contentDecoded['entries'], function ($entry) use ($idFicheIdx, $entriesIds) {
                                     return !empty($entry[$idFicheIdx]) && in_array($entry[$idFicheIdx], $entriesIds);
                                 }));
+                                if ($selectmembersdisplayfilters) {
+                                    $contentDecoded['fieldMapping'][] = CustomSendMailService::KEY_FOR_PARENTS;
+                                    $contentDecoded['fieldMapping'][] = CustomSendMailService::KEY_FOR_AREAS;
+                                    $contentDecoded['entries'] = array_map(function ($entryData) use ($idFicheIdx, $entries) {
+                                        if (!empty($entryData[$idFicheIdx]) && !empty($entries[$entryData[$idFicheIdx]])) {
+                                            $entryData[] = implode(',', $entries[$entryData[$idFicheIdx]][CustomSendMailService::KEY_FOR_PARENTS] ?? []);
+                                            $entryData[] = implode(',', $entries[$entryData[$idFicheIdx]][CustomSendMailService::KEY_FOR_AREAS] ?? []);
+                                        } else {
+                                            $entryData[] = "";
+                                            $entryData[] = "";
+                                        }
+                                        return $entryData;
+                                    }, $contentDecoded['entries']);
+                                    if (isset($contentDecoded['filters']) && is_array($contentDecoded['filters'])) {
+                                        $contentDecoded['filters'] = $this->customSendMailService->updateFilters($contentDecoded['filters'], null, $entries);
+                                    }
+                                }
+
                                 $response->setData($contentDecoded);
                             }
                         }

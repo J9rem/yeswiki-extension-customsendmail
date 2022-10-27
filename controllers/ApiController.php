@@ -22,6 +22,7 @@ use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Bazar\Service\FormManager;
 use YesWiki\Core\ApiResponse;
 use YesWiki\Core\YesWikiController;
+use YesWiki\Core\Service\UserManager;
 use YesWiki\Customsendmail\Service\CustomSendMailService;
 
 class ApiController extends YesWikiController
@@ -38,7 +39,7 @@ class ApiController extends YesWikiController
         $contactsLegend = $sendtogroup ? _t('CUSTOMSENDMAIL_ONEEMAIL') : _t('CUSTOMSENDMAIL_ONEBYONE');
         // $message = htmlspecialchars_decode(html_entity_decode($message));
         $message = $this->replaceLinks($message, $sendtogroup, "EntryIdExample");
-        $contactFromMail = !empty($this->wiki->config['contact_from']) ? ($this->wiki->UserIsAdmin() ? $this->wiki->config['contact_from'] : 'contact_from'):'';
+        $contactFromMail = !empty($this->wiki->config['contact_from']) ? ($this->wiki->UserIsAdmin() ? $this->wiki->config['contact_from'] : 'contact_from') : '';
         $realSenderName = !empty($this->wiki->config['contact_from']) ? $contactFromMail : $senderName;
         $realSenderEmail = !empty($this->wiki->config['contact_from']) ? $contactFromMail : $senderEmail;
         $replyto = (!empty($this->wiki->config['contact_from']) && !$addsendertoreplyto && !($addcontactstoreplyto && $sendtogroup))
@@ -48,12 +49,12 @@ class ApiController extends YesWikiController
                 (($addcontactstoreplyto && $sendtogroup) ? (
                     ($addsendertoreplyto ? "," : "").
                     $contacts
-                ): "")
+                ) : "")
             );
         $replyto .= (!empty($this->wiki->config['contact_reply_to']) ? (
             (empty($replyto) ? "" : ",").
             ($this->wiki->UserIsAdmin() ? $this->wiki->config['contact_reply_to'] : 'contact_reply_to')
-        ): "");
+        ) : "");
         $hiddenCopy = $receivehiddencopy ? $senderEmail : "";
 
         $html = "";
@@ -83,7 +84,7 @@ class ApiController extends YesWikiController
             }
         }
         $params = $this->getParams($isAdmin);
-        
+
         $filteredContacts = $isAdmin ? $params['contacts']
             : implode(',', array_keys($customSendMailService->filterEntriesFromParents(explode(',', $params['contacts']), false, "only_members")));
 
@@ -99,14 +100,14 @@ class ApiController extends YesWikiController
         $messageTxt = str_replace('&nbsp;', " ", $messageTxt);
         $messageTxt = preg_replace("/{$startP}[^>]*{$endStart}([^<]*){$endP}/", "$1\n", $messageTxt);
         $messageTxt = html_entity_decode($messageTxt);
-        
+
         $emailfieldname = filter_input(INPUT_POST, 'emailfieldname', FILTER_UNSAFE_RAW);
         $emailfieldname = ($emailfieldname === false) ? "" : htmlspecialchars(strip_tags($emailfieldname));
         $contacts = $this->getContacts($filteredContacts, $emailfieldname, $isAdmin);
         if ($params['addsendertocontact']) {
             $contacts['sender-email'] = $params['senderEmail'];
         }
-        $hiddenCopies = $params['receivehiddencopy'] ? [$params['senderEmail']]: [];
+        $hiddenCopies = $params['receivehiddencopy'] ? [$params['senderEmail']] : [];
         $repliesTo = $params['addsendertoreplyto'] ? [$addsendertoreplyto] : [];
         if ($params['sendtogroup'] && $params['addcontactstoreplyto']) {
             $repliesTo = array_merge($repliesTo, array_values($contacts));
@@ -164,7 +165,7 @@ class ApiController extends YesWikiController
                         if (!empty($emailfieldname)) {
                             $field = $formManager->findFieldFromNameOrPropertyName($emailfieldname, $formId);
                             $formsCache[$formId] = [
-                                'prepared' => empty($field) ? [] :[
+                                'prepared' => empty($field) ? [] : [
                                     $field
                                 ]
                             ];
@@ -195,6 +196,57 @@ class ApiController extends YesWikiController
         return $contacts;
     }
 
+    /**
+     * @Route("/api/customsendmail/filterentries", methods={"POST"},options={"acl":{"public","+"}})
+     */
+    public function filterAuthorizedEntries()
+    {
+        foreach (['entriesIds','params'] as $key) {
+            $tmp = (isset($_POST[$key]) && is_array($_POST[$key])) ? $_POST[$key] : [];
+            $tmp = array_filter($tmp, function ($val) {
+                return is_string($val);
+            });
+            extract([$key => $tmp]);
+            unset($tmp);
+        }
+        $isAdmin = $this->wiki->UserIsAdmin();
+        if (!$isAdmin) {
+            if (empty($params['selectmembers']) ||
+                !in_array($params['selectmembers'], ["only_members","members_and_profiles_in_area"])) {
+                $entriesIds = [];
+            } else {
+                $selectmembersparentform = (empty($params['selectmembersparentform']) ||
+                    intval($params['selectmembersparentform']) != $params['selectmembersparentform'] ||
+                    intval($params['selectmembersparentform']) < 0)
+                    ? ""
+                    : $params['selectmembersparentform'];
+                $customSendMailService = $this->getService(CustomSendMailService::class);
+                $entries = $customSendMailService->filterEntriesFromParents($entriesIds, false, $params['selectmembers'], $selectmembersparentform);
+                $entriesIds = array_keys($entries);
+            }
+        }
+        return new ApiResponse(['entriesIds' => $entriesIds]);
+    }
+
+    /**
+     * @Route("/api/customsendmail/currentuseremail", methods={"GET"},options={"acl":{"public","+"}})
+     */
+    public function getCurrentUserEmail()
+    {
+        $userManager = $this->getService(UserManager::class);
+        $user = $userManager->getLoggedUser();
+        $email = "";
+        $name = "";
+        if (!empty($user['name'])) {
+            $user = $userManager->getOneByName($user['name']);
+            if (!empty($user['email'])) {
+                $email = $user['email'];
+                $name = $user['name'];
+            }
+        }
+        return new ApiResponse(['email' => $email,'name'=>$name]);
+    }
+
 
     private function sendMail(
         string $mail_sender,
@@ -205,7 +257,7 @@ class ApiController extends YesWikiController
         string $subject,
         string $message_txt,
         string $message_html
-    ):bool {
+    ): bool {
         if (empty($contacts)) {
             return false;
         }
@@ -213,7 +265,7 @@ class ApiController extends YesWikiController
         $mail = new PHPMailer(true);
         try {
             $mail->set('CharSet', 'utf-8');
-    
+
             if ($this->wiki->config['contact_mail_func'] == 'smtp') {
                 //Tell PHPMailer to use SMTP
                 $mail->isSMTP();
@@ -242,7 +294,7 @@ class ApiController extends YesWikiController
                 // Set PHPMailer to use the sendmail transport
                 $mail->isSendmail();
             }
-    
+
             //Set an alternative reply-to address
             if (!empty($this->wiki->config['contact_reply_to'])) {
                 $mail->addReplyTo($this->wiki->config['contact_reply_to']);
@@ -265,7 +317,7 @@ class ApiController extends YesWikiController
                 $name_sender = $mail_sender;
             }
             $mail->setFrom($mail_sender, $name_sender);
-    
+
             //Set who the message is to be sent to
             foreach ($contacts as $key => $mail_receiver) {
                 $mail->addAddress($mail_receiver, $mail_receiver);
@@ -276,12 +328,12 @@ class ApiController extends YesWikiController
             }
             //Set the subject line
             $mail->Subject = $subject;
-    
+
             // That's bad if only text passed to function: Linebreaks won't be rendered.
             //if (empty($message_html)) {
             //  $message_html = $message_txt;
             //}
-    
+
             if (empty($message_html)) {
                 $mail->isHTML(false);
                 $mail->Body = $message_txt ;
@@ -307,12 +359,12 @@ class ApiController extends YesWikiController
     {
         $message = (isset($_POST['message']) && is_string($_POST['message'])) ? $_POST['message'] : '';
         $senderName = filter_input(INPUT_POST, 'senderName', FILTER_UNSAFE_RAW);
-        $senderName = ($senderName === false) ? "" : htmlspecialchars(strip_tags($senderName));
+        $senderName = in_array($senderName, [false,null], true) ? "" : htmlspecialchars(strip_tags($senderName));
         $senderEmail = filter_input(INPUT_POST, 'senderEmail', FILTER_VALIDATE_EMAIL);
         $subject = filter_input(INPUT_POST, 'subject', FILTER_UNSAFE_RAW);
-        $subject = ($subject === false) ? "" : htmlspecialchars(strip_tags($subject));
+        $subject = in_array($subject, [false,null], true) ? "" : htmlspecialchars(strip_tags($subject));
         $contacts = filter_input(INPUT_POST, 'contacts', FILTER_UNSAFE_RAW);
-        $contacts = ($contacts === false) ? "" : htmlspecialchars(strip_tags($contacts));
+        $contacts = in_array($contacts, [false,null], true) ? "" : htmlspecialchars(strip_tags($contacts));
         $addsendertocontact = filter_input(INPUT_POST, 'addsendertocontact', FILTER_VALIDATE_BOOL);
         $sendtogroup = $isAdmin && filter_input(INPUT_POST, 'sendtogroup', FILTER_VALIDATE_BOOL);
         $addsendertoreplyto = filter_input(INPUT_POST, 'addsendertoreplyto', FILTER_VALIDATE_BOOL);
@@ -321,7 +373,7 @@ class ApiController extends YesWikiController
         return compact(['message','senderName','senderEmail','subject','contacts','addsendertocontact','sendtogroup','addsendertoreplyto','addcontactstoreplyto','receivehiddencopy']);
     }
 
-    private function replaceLinks(string $message, bool $sendtogroup, string $entryId, bool $modeTxt = false):string
+    private function replaceLinks(string $message, bool $sendtogroup, string $entryId, bool $modeTxt = false): string
     {
         $output = $message;
         $entryManager = $this->getService(EntryManager::class);
@@ -338,7 +390,7 @@ class ApiController extends YesWikiController
                 ['{entryLink}','{entryLinkWithTitle}','{entryEditLink}','{entryEditLinkWithText}','{entryLinkWithText}'],
                 ($modeTxt)
                 ? [$link,"$title ($link)",$editLink, _t('BAZ_MODIFIER_LA_FICHE'). " \"$title\" ($editLink)",_t('BAZ_SEE_ENTRY'). " \"$title\" ($link)"]
-                :["<a href=\"$link\" title=\"$title\" target=\"blank\">$link</a>","<a href=\"$link\" target=\"blank\">$title</a>","<a href=\"$editLink\" target=\"blank\">$editLink</a>","<a href=\"$editLink\" target=\"blank\">"._t('BAZ_MODIFIER_LA_FICHE'). " \"$title\"</a>","<a href=\"$link\" target=\"blank\">"._t('BAZ_SEE_ENTRY'). " \"$title\"</a>"],
+                : ["<a href=\"$link\" title=\"$title\" target=\"blank\">$link</a>","<a href=\"$link\" target=\"blank\">$title</a>","<a href=\"$editLink\" target=\"blank\">$editLink</a>","<a href=\"$editLink\" target=\"blank\">"._t('BAZ_MODIFIER_LA_FICHE'). " \"$title\"</a>","<a href=\"$link\" target=\"blank\">"._t('BAZ_SEE_ENTRY'). " \"$title\"</a>"],
                 $output
             );
         }
@@ -355,7 +407,7 @@ class ApiController extends YesWikiController
         $output = "";
         if ($this->wiki->UserIsAdmin()) {
             $output .= '<h2>Custom Sendmail</h2>' . "\n";
-    
+
             $output .= '
             <p>
             <b><code>POST ' . $this->wiki->href('', 'api/customsendmail/preview') . '</code></b><br />

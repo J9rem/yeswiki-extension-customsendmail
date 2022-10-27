@@ -63,7 +63,7 @@ trait ActionsBuilderServiceCommon
                         'width' => '35%',
                         'properties' => [
                             'template' => [
-                                'value' => 'send-mail.tpl.html',
+                                'value' => 'send-mail',
                             ],
                             'title' => [
                                 'label' => _t('CUSTOMSENDMAIL_SENDMAIL_TITLE_LABEL'),

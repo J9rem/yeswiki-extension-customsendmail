@@ -256,49 +256,36 @@ class CustomSendMailService
         return $entries;
     }
 
-    public function updateFilters(?array $filters, ?string $renderedEntries): array
+    public function updateFilters(?array $filters, ?string $renderedEntries, ?array $entries): array
     {
-        $keyForParents = preg_quote(self::KEY_FOR_PARENTS, "/");
-        $keyForAreas = preg_quote(self::KEY_FOR_AREAS, "/");
-        $tag = WN_CAMEL_CASE_EVOLVED;
-        $tagOrComa = "[\p{L}\-_.0-9,]+" ; // WN_CAMEL_CASE_EVOLVED + ","
-        if (preg_match_all("/data-id_fiche=\"($tag)\"[^>]+data-$keyForParents=\"($tagOrComa)\"[^>]*(?:data-$keyForAreas=\"($tagOrComa)\")?/", $renderedEntries, $matches)) {
+        if (!empty($renderedEntries)) {
+            extract($this->getParentsAreasFromRender($renderedEntries));
+        } elseif (!empty($entries)) {
+            extract($this->getParentsAreas($entries));
+        } else {
             $parents = [];
             $areas = [];
-            foreach ($matches[0] as $idx => $match) {
-                $tag = $matches[1][$idx];
-                $parentsAsString = $matches[2][$idx];
-                $areasAsString = $matches[3][$idx];
-                $currentParents = empty($parentsAsString) ? [] : explode(',', $parentsAsString);
-                if (!isset($parents[$tag])) {
-                    $parents[$tag] = $currentParents;
+        }
+        $formattedParents = [];
+        $formattedAreas = [];
+        foreach ($parents as $entryId => $list) {
+            foreach ($list as $tagName) {
+                if (!isset($formattedParents[$tagName])) {
+                    $formattedParents[$tagName] = [
+                        'nb' => 0
+                    ];
                 }
-                $currentAreas = empty($areasAsString) ? [] : explode(',', $areasAsString);
-                if (!isset($parents[$tag])) {
-                    $areas[$tag] = $areasAsString;
-                }
+                $formattedParents[$tagName]['nb'] = $formattedParents[$tagName]['nb'] + 1;
             }
-            $formattedParents = [];
-            foreach ($parents as $entryId => $list) {
-                foreach ($list as $tagName) {
-                    if (!isset($formattedParents[$tagName])) {
-                        $formattedParents[$tagName] = [
-                            'nb' => 0
-                        ];
-                    }
-                    $formattedParents[$tagName]['nb'] = $formattedParents[$tagName]['nb'] + 1;
+        }
+        foreach ($areas as $entryId => $list) {
+            foreach ($list as $tagName) {
+                if (!isset($formattedAreas[$tagName])) {
+                    $formattedAreas[$tagName] = [
+                        'nb' => 0
+                    ];
                 }
-            }
-            $formattedAreas = [];
-            foreach ($areas as $entryId => $list) {
-                foreach ($list as $tagName) {
-                    if (!isset($formattedAreas[$tagName])) {
-                        $formattedAreas[$tagName] = [
-                            'nb' => 0
-                        ];
-                    }
-                    $formattedAreas[$tagName]['nb'] = $formattedAreas[$tagName]['nb'] + 1;
-                }
+                $formattedAreas[$tagName]['nb'] = $formattedAreas[$tagName]['nb'] + 1;
             }
         }
         if (!empty($formattedParents)) {
@@ -359,6 +346,70 @@ class CustomSendMailService
             $filters = $newFilters;
         }
         return $filters;
+    }
+
+    private function getParentsAreasFromRender(string $renderedEntries): array
+    {
+        $parents = [];
+        $areas = [];
+        $keyForParents = preg_quote(self::KEY_FOR_PARENTS, "/");
+        $keyForAreas = preg_quote(self::KEY_FOR_AREAS, "/");
+        $tag = WN_CAMEL_CASE_EVOLVED;
+        $tagOrComa = "[\p{L}\-_.0-9,]+" ; // WN_CAMEL_CASE_EVOLVED + ","
+        if (preg_match_all("/data-id_fiche=\"($tag)\"[^>]+data-$keyForParents=\"($tagOrComa)\"[^>]*(?:data-$keyForAreas=\"($tagOrComa)\")?/", $renderedEntries, $matches)) {
+            foreach ($matches[0] as $idx => $match) {
+                $tag = $matches[1][$idx];
+                $parentsAsString = $matches[2][$idx];
+                $areasAsString = $matches[3][$idx];
+                $currentParents = empty($parentsAsString) ? [] : explode(',', $parentsAsString);
+                if (!isset($parents[$tag])) {
+                    $parents[$tag] = $currentParents;
+                }
+                $currentAreas = empty($areasAsString) ? [] : explode(',', $areasAsString);
+                if (!isset($areas[$tag])) {
+                    $areas[$tag] = $currentAreas;
+                }
+            }
+        }
+        return compact(['parents','areas']);
+    }
+
+    private function getParentsAreas(array $entries): array
+    {
+        $parents = [];
+        $areas = [];
+        foreach ($entries as $entry) {
+            foreach ([
+                self::KEY_FOR_PARENTS => 'parents',
+                self::KEY_FOR_AREAS => 'areas',
+            ] as $key => $varName) {
+                $counter = -1;
+                $values = empty($entry[$key])
+                    ? []
+                    : (
+                        is_string($entry[$key])
+                        ? explode(',', $entry[$key])
+                        : (
+                            is_array($entry[$key])
+                            ? (
+                                count(array_filter($entry[$key], function ($k) use (&$counter) {
+                                    $counter = $counter + 1;
+                                    return $k != $counter;
+                                }, ARRAY_FILTER_USE_KEY)) > 0
+                                ? array_keys(array_filter($entry[$key], function ($val) {
+                                    return in_array($val, [1,true,"1","true"]);
+                                }))
+                                : $entry[$key]
+                            )
+                            : []
+                        )
+                    );
+                if (!isset($$varName[$entry['id_fiche']])) {
+                    $$varName[$entry['id_fiche']] = $values;
+                }
+            }
+        }
+        return compact(['parents','areas']);
     }
 
     /**
