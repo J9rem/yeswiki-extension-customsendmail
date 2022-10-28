@@ -333,7 +333,7 @@ class CustomSendMailService
                 ];
             }
             $encoding = mb_internal_encoding();
-            uasort($parentList, function ($a, $b) use ($encoding) {
+            usort($parentList, function ($a, $b) use ($encoding) {
                 if ($a['label'] == $b['label']) {
                     return 0;
                 }
@@ -361,7 +361,7 @@ class CustomSendMailService
                     "checked" => (!empty($tabfacette[self::KEY_FOR_PARENTS]) && in_array($tagName, $tabfacette[self::KEY_FOR_PARENTS])) ? " checked" : ""
                 ];
             }
-            uasort($areaList, function ($a, $b) use ($encoding) {
+            usort($areaList, function ($a, $b) use ($encoding) {
                 if ($a['value'] == $b['value']) {
                     return 0;
                 }
