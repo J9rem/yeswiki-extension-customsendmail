@@ -24,7 +24,9 @@ class __BazarListeAction extends YesWikiAction
         $newArg = [];
         if (!empty($arg['template']) && $arg['template'] == "send-mail"){
             $newArg['dynamic'] = true;
+            $newArg['pagination'] = -1;
             $arg['dynamic'] = true;
+            $arg['pagination'] = -1;
         }
         if (!$this->wiki->services->has(GroupController::class)) {
             return $newArg;

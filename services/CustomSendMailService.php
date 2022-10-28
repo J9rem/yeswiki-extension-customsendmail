@@ -280,10 +280,11 @@ class CustomSendMailService
                 strval($arg['selectmembersparentform']) == strval(intval($arg['selectmembersparentform'])) &&
                 intval($arg['selectmembersparentform']) > 0
         ) ? $arg['selectmembersparentform'] : "";
+        $isMapTemplate = (!empty($arg['template']) && $arg['template'] === "map");
         if (!empty($renderedEntries)) {
             extract($this->getParentsAreasFromRender($renderedEntries));
         } elseif (!empty($entries)) {
-            extract($this->getParentsAreas($entries));
+            extract($this->getParentsAreas($entries, $isMapTemplate));
         } else {
             $parents = [];
             $areas = [];
@@ -422,38 +423,40 @@ class CustomSendMailService
         return compact(['parents','areas']);
     }
 
-    private function getParentsAreas(array $entries): array
+    private function getParentsAreas(array $entries, bool $isMapTemplate): array
     {
         $parents = [];
         $areas = [];
         foreach ($entries as $entry) {
-            foreach ([
-                self::KEY_FOR_PARENTS => 'parents',
-                self::KEY_FOR_AREAS => 'areas',
-            ] as $key => $varName) {
-                $counter = -1;
-                $values = empty($entry[$key])
-                    ? []
-                    : (
-                        is_string($entry[$key])
-                        ? explode(',', $entry[$key])
+            if (!$isMapTemplate || (!empty($entry['bf_latitude']) && !empty($entry['bf_longitude']))) {
+                foreach ([
+                    self::KEY_FOR_PARENTS => 'parents',
+                    self::KEY_FOR_AREAS => 'areas',
+                ] as $key => $varName) {
+                    $counter = -1;
+                    $values = empty($entry[$key])
+                        ? []
                         : (
-                            is_array($entry[$key])
-                            ? (
-                                count(array_filter($entry[$key], function ($k) use (&$counter) {
-                                    $counter = $counter + 1;
-                                    return $k != $counter;
-                                }, ARRAY_FILTER_USE_KEY)) > 0
-                                ? array_keys(array_filter($entry[$key], function ($val) {
-                                    return in_array($val, [1,true,"1","true"]);
-                                }))
-                                : $entry[$key]
+                            is_string($entry[$key])
+                            ? explode(',', $entry[$key])
+                            : (
+                                is_array($entry[$key])
+                                ? (
+                                    count(array_filter($entry[$key], function ($k) use (&$counter) {
+                                        $counter = $counter + 1;
+                                        return $k != $counter;
+                                    }, ARRAY_FILTER_USE_KEY)) > 0
+                                    ? array_keys(array_filter($entry[$key], function ($val) {
+                                        return in_array($val, [1,true,"1","true"]);
+                                    }))
+                                    : $entry[$key]
+                                )
+                                : []
                             )
-                            : []
-                        )
-                    );
-                if (!isset($$varName[$entry['id_fiche']])) {
-                    $$varName[$entry['id_fiche']] = $values;
+                        );
+                    if (!isset($$varName[$entry['id_fiche']])) {
+                        $$varName[$entry['id_fiche']] = $values;
+                    }
                 }
             }
         }
