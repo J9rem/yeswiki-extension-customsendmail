@@ -327,7 +327,7 @@ class CustomSendMailService
                 $parentList[] = [
                     "id" => self::KEY_FOR_PARENTS.$tagName,
                     "name" => self::KEY_FOR_PARENTS,
-                    "value" => $tagName,
+                    "value" => strval($tagName),
                     "label" => $label,
                     "nb" => $formattedParent['nb'] ?? 0,
                     "checked" => (!empty($tabfacette[self::KEY_FOR_PARENTS]) && in_array($tagName, $tabfacette[self::KEY_FOR_PARENTS])) ? " checked" : ""
@@ -356,7 +356,7 @@ class CustomSendMailService
                 $areaList[] = [
                     "id" => self::KEY_FOR_AREAS.$tagName,
                     "name" => self::KEY_FOR_AREAS,
-                    "value" => $tagName,
+                    "value" => strval($tagName),
                     "label" => $label,
                     "nb" => $formattedArea['nb'] ?? 0,
                     "checked" => (!empty($tabfacette[self::KEY_FOR_PARENTS]) && in_array($tagName, $tabfacette[self::KEY_FOR_PARENTS])) ? " checked" : ""
