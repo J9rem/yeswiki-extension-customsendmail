@@ -22,7 +22,7 @@
   {% if param.selectmembers is empty and not hasAcl("+") %}
     {{ include("@templates/alert-message.twig",{type:"danger",message:"Template '#{_self}': " ~ _t('BAZ_NEED_ADMIN_RIGHTS')})}}
   {% else %}
-    <Bazar-Send-Mail :params="params" :entries="entriesToDisplay" :ready="ready" :hascontactfrom="{{ (config.contact_from is not empty)|json_encode }}">
+    <Bazar-Send-Mail :params="params" :entries="entriesToDisplay" :ready="ready" :hascontactfrom="{{ (config.contact_from is not empty)|json_encode }}" :root="$root">
       <template #title>{{ params.title|trim is not empty ? params.title : _t('CUSTOMSENDMAIL_DEFAULT_TITLE') }}</template>
       <template #checkall>{{ _t('BAZAR_CHECKALL') }}</template>
       <template #hascontactfrom>

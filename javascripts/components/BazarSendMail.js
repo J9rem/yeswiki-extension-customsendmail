@@ -13,7 +13,7 @@ let componentName = 'BazarSendMail';
 let isVueJS3 = (typeof Vue.createApp == "function");
 
 let componentParams = {
-    props: ['params','entries','hascontactfrom','ready'],
+    props: ['params','entries','hascontactfrom','ready','root'],
     components: { SpinnerLoader},
     data: function() {
         return {
@@ -76,7 +76,8 @@ let componentParams = {
                     if (xhr.status == 200){
                         let responseDecoded = JSON.parse(xhr.response);
                         if (responseDecoded && responseDecoded.hasOwnProperty('entriesIds') && Array.isArray(responseDecoded.entriesIds)){
-                            let initSelectedAddresses = (this.selectedAddresses.length == 0);
+                            let newSelectedAddrresses = [];
+                            let idsToRemoveFromSearchedEntries = [];
                             entriesIds.forEach((id)=>{
                                 if (!this.cacheEntriesDisplay.hasOwnProperty(id)){
                                     this.cacheEntriesDisplay[id] = {
@@ -86,9 +87,15 @@ let componentParams = {
                                 }
                                 this.cacheEntriesDisplay[id].auth = responseDecoded.entriesIds.includes(id);
                                 if (this.cacheEntriesDisplay[id].auth){
-                                    this.selectedAddresses = [...this.selectedAddresses,id];
+                                    newSelectedAddrresses.push(id);
+                                } else {
+                                    idsToRemoveFromSearchedEntries.push(id);
                                 }
                             });
+                            if (newSelectedAddrresses.length > 0){
+                                this.selectedAddresses = [...this.selectedAddresses,...newSelectedAddrresses];
+                            }
+                            this.removeFromSearchedEntries(idsToRemoveFromSearchedEntries);
                         }
                     }
                     this.removeIdsFromUpdating(entriesIds);
@@ -465,6 +472,11 @@ let componentParams = {
             } else {
                 this.sendingMail = false;
             }
+        },
+        removeFromSearchedEntries: function(idsToRemoveFromSearchedEntries){
+            if (idsToRemoveFromSearchedEntries.length > 0){
+                this.root.searchedEntries = this.root.searchedEntries.filter(e => !idsToRemoveFromSearchedEntries.includes(e.id_fiche));
+            }
         }
     },
     mounted(){
@@ -477,14 +489,22 @@ let componentParams = {
             let newIds = newVal.map(e => e.id_fiche)
             let oldIds = oldVal.map(e => e.id_fiche)
             if (!this.arraysEqual(newIds, oldIds)) {
-                Object.keys(this.cacheEntriesDisplay).forEach((entryId)=>{
-                    this.cacheEntriesDisplay[entryId].display = true;
-                });
                 let idsInCache = Object.keys(this.cacheEntriesDisplay);
+                let idsToRemoveFromSearchedEntries = [];
+                idsInCache.forEach((entryId)=>{
+                    if (newIds.includes(entryId)){
+                        this.cacheEntriesDisplay[entryId].display = true;
+                        if (!this.cacheEntriesDisplay[entryId].auth && !idsToRemoveFromSearchedEntries.includes(entryId)){
+                            // entryToRemoveFromFilteredEntries
+                            idsToRemoveFromSearchedEntries.push(entryId);
+                        }
+                    }
+                });
                 let idsNotInCache = newIds.filter((entryId)=>{
                     return !idsInCache.includes(entryId) && !this.updatingIds.includes(entryId);
                 });
                 this.updateStatus(idsNotInCache);
+                this.removeFromSearchedEntries(idsToRemoveFromSearchedEntries);
             }
             this.updateAvailableEntries();
             if (typeof oldVal == "object" && Object.keys(oldVal).length != 0){
