@@ -333,8 +333,8 @@ class CustomSendMailService
                 ];
             }
             $encoding = mb_internal_encoding();
-            uasort($parentList,function($a,$b) use ($encoding){
-                if ($a['label'] == $b['label']){
+            uasort($parentList, function ($a, $b) use ($encoding) {
+                if ($a['label'] == $b['label']) {
                     return 0;
                 }
                 return strcmp(mb_strtoupper($a['label'], $encoding), mb_strtoupper($b['label'], $encoding));
@@ -361,11 +361,11 @@ class CustomSendMailService
                     "checked" => (!empty($tabfacette[self::KEY_FOR_PARENTS]) && in_array($tagName, $tabfacette[self::KEY_FOR_PARENTS])) ? " checked" : ""
                 ];
             }
-            uasort($areaList,function($a,$b) use ($encoding){
-                if ($a['label'] == $b['label']){
+            uasort($areaList, function ($a, $b) use ($encoding) {
+                if ($a['value'] == $b['value']) {
                     return 0;
                 }
-                return strcmp(mb_strtoupper($a['label'], $encoding), mb_strtoupper($b['label'], $encoding));
+                return strcmp(mb_strtoupper($a['value'], $encoding), mb_strtoupper($b['value'], $encoding));
             });
             $newFilters = [];
             if (!empty($areaList)) {

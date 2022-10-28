@@ -154,7 +154,7 @@ class GroupController extends YesWikiController implements EventSubscriberInterf
             in_array($arg['selectmembersdisplayfilters'], [true,1,"1","true"], true)
         );
 
-        if (!$this->wiki->UserIsAdmin() && !empty($selectmembers)) {
+        if (!empty($selectmembers) && (!$this->wiki->UserIsAdmin() || $selectmembersdisplayfilters)) {
             $ids = $arg['id'] ?? null;
             if (empty($this->customSendMailService->getAdminSuffix()) || empty($ids)) {
                 return [];
