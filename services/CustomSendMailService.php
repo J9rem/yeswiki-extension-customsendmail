@@ -141,7 +141,7 @@ class CustomSendMailService
                                     );
                                 }
                             }
-                            if ($mode == "members_and_profiles_in_area" && !empty($formData['area'])) {
+                            if ($mode == "members_and_profiles_in_area" && !empty($formData['areaFields'])) {
                                 $this->processAreas($entry, $results, $formData, $areas, $suffix, $user, $callback, $appendDisplayData);
                             }
                         }
@@ -167,7 +167,7 @@ class CustomSendMailService
      * @param array &$formCache
      * @param null|EnumField $fieldForArea
      * @param string $selectmembersparentform
-     * @return array ['form'=>array'enumEntryFields'=>array,'area' => ['name'=> string,'field'=>EnumField],'association'=>?EnumField]
+     * @return array ['form'=>array'enumEntryFields'=>array,'areaFields' => [EnumField,EnumField],'association'=>?EnumField]
      */
     private function extractFields($formId, array &$formCache, $fieldForArea, string $selectmembersparentform): array
     {
@@ -180,7 +180,7 @@ class CustomSendMailService
                 $formCache[$formId]['form'] = [];
             } else {
                 $formCache[$formId]['enumEntryFields'] = [];
-                $formCache[$formId]['area'] = [];
+                $formCache[$formId]['areaFields'] = [];
                 $formCache[$formId]['association'] = null;
                 $areaAssociationForm = $this->getAreaAssociationForm();
                 foreach ($formCache[$formId]['form']['prepared'] as $field) {
@@ -195,10 +195,7 @@ class CustomSendMailService
                     if ($fieldForArea &&
                         $field instanceof EnumField &&
                         $field->getLinkedObjectName() === $fieldForArea->getLinkedObjectName()) {
-                        $formCache[$formId]['area'] = [
-                            'name' => $field->getPropertyName(),
-                            'field' => $field
-                        ];
+                        $formCache[$formId]['areaFields'][] = $field;
                     }
                     if (!empty($areaAssociationForm['linkedObjectName']) &&
                         $field instanceof EnumField &&
@@ -540,12 +537,19 @@ class CustomSendMailService
     ) {
         if (!empty($areas)) {
             $validatedAreas = [];
-            $field = $formData['area']['field']; // the right field corresponding to area
             // same Area
-            if ($field instanceof CheckboxField) {
-                $currentAreas = $field->getValues($entry);
-            } else {
-                $currentAreas = !empty($entry[$field->getPropertyName()]) ? [$entry[$field->getPropertyName()]] : [];
+            $currentAreas = [];
+            foreach ($formData['areaFields'] as $field) {
+                if ($field instanceof CheckboxField) {
+                    $newAreas = $field->getValues($entry);
+                } else {
+                    $newAreas = !empty($entry[$field->getPropertyName()]) ? [$entry[$field->getPropertyName()]] : [];
+                }
+                foreach ($newAreas as $area) {
+                    if (!in_array($area, $currentAreas)) {
+                        $currentAreas[] = $area;
+                    }
+                }
             }
 
             // check administrative areas if $currentAreas is empty
