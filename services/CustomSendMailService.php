@@ -332,6 +332,13 @@ class CustomSendMailService
                     "checked" => (!empty($tabfacette[self::KEY_FOR_PARENTS]) && in_array($tagName, $tabfacette[self::KEY_FOR_PARENTS])) ? " checked" : ""
                 ];
             }
+            $encoding = mb_internal_encoding();
+            uasort($parentList,function($a,$b) use ($encoding){
+                if ($a['label'] == $b['label']){
+                    return 0;
+                }
+                return strcmp(mb_strtoupper($a['label'], $encoding), mb_strtoupper($b['label'], $encoding));
+            });
             $areaList = [];
             $options = [];
             if ($selectmembers == "members_and_profiles_in_area") {
@@ -343,7 +350,6 @@ class CustomSendMailService
                     }
                 }
             }
-            $areas = [];
             foreach ($formattedAreas as $tagName => $formattedArea) {
                 $label = empty($options[$tagName]) ? $tagName : $options[$tagName];
                 $areaList[] = [
@@ -355,6 +361,12 @@ class CustomSendMailService
                     "checked" => (!empty($tabfacette[self::KEY_FOR_PARENTS]) && in_array($tagName, $tabfacette[self::KEY_FOR_PARENTS])) ? " checked" : ""
                 ];
             }
+            uasort($areaList,function($a,$b) use ($encoding){
+                if ($a['label'] == $b['label']){
+                    return 0;
+                }
+                return strcmp(mb_strtoupper($a['label'], $encoding), mb_strtoupper($b['label'], $encoding));
+            });
             $newFilters = [];
             if (!empty($areaList)) {
                 $newFilters[self::KEY_FOR_AREAS] = [

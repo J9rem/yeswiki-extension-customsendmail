@@ -9,7 +9,7 @@
  *#}
 
 {% if params.customSendMailService %}
-  {% set filters = attribute(params.customSendMailService,'updateFilters',[filters,renderedEntries]) %}
+  {% set filters = attribute(params.customSendMailService,'updateFilters',[filters,renderedEntries,null,params]) %}
 {% endif %}
 {{ include([
   'custom/templates/bazar/templates/entries/index.twig',
