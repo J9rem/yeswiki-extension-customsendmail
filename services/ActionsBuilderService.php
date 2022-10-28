@@ -125,7 +125,7 @@ trait ActionsBuilderServiceCommon
                         'required' => true,
                         'min' => 1,
                         'showif' => [
-                            'selectmembers' => 'members_and_profiles_in_area' ,
+                            'selectmembers' => 'only_members|members_and_profiles_in_area' ,
                         ],
                     ];
                     $this->data['action_groups']['bazarliste']['actions']['commons']['properties']['selectmembersdisplayfilters'] = [

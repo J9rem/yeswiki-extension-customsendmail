@@ -123,7 +123,7 @@ class CustomSendMailService
                     }
                     if (!empty($entry['id_typeannonce'])) {
                         $formId = $entry['id_typeannonce'];
-                        $formData = $this->extractFields($formId, $formCache, $fieldForArea ?? null);
+                        $formData = $this->extractFields($formId, $formCache, $fieldForArea ?? null, $selectmembersparentform);
                         if (!empty($formData)) {
                             if (!empty($formData['enumEntryFields'])) {
                                 $parentsIds = $this->isAdminOfParent($entry, $formData['enumEntryFields'], $suffix, $user['name'], $appendDisplayData);
@@ -166,9 +166,10 @@ class CustomSendMailService
      * @param scalar $formId
      * @param array &$formCache
      * @param null|EnumField $fieldForArea
+     * @param string $selectmembersparentform
      * @return array ['form'=>array'enumEntryFields'=>array,'area' => ['name'=> string,'field'=>EnumField],'association'=>?EnumField]
      */
-    private function extractFields($formId, array &$formCache, $fieldForArea): array
+    private function extractFields($formId, array &$formCache, $fieldForArea, string $selectmembersparentform): array
     {
         if (empty($formId) || !is_scalar($formId) || strval($formId) != strval(intval($formId)) || intval($formId)<0) {
             return [];
@@ -183,9 +184,12 @@ class CustomSendMailService
                 $formCache[$formId]['association'] = null;
                 $areaAssociationForm = $this->getAreaAssociationForm();
                 foreach ($formCache[$formId]['form']['prepared'] as $field) {
-                    if ($field instanceof CheckboxEntryField ||
+                    if (($field instanceof CheckboxEntryField ||
                         $field instanceof RadioEntryField ||
-                        $field instanceof SelectEntryField) {
+                        $field instanceof SelectEntryField) && (
+                            empty($selectmembersparentform) ||
+                            $field->getLinkedObjectName() == $selectmembersparentform
+                        )) {
                         $formCache[$formId]['enumEntryFields'][] = $field;
                     }
                     if ($fieldForArea &&
