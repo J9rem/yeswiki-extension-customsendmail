@@ -733,7 +733,7 @@ class CustomSendMailService
             !empty($formId) &&
             is_scalar($formId) &&
             (strval($formId) == strval(intval($formId))) &&
-            intval($formId)<0
+            intval($formId)>0
         )
             ? strval($formId)
             : "";
@@ -746,7 +746,7 @@ class CustomSendMailService
             $formId = $this->getFormIdAreaToDepartment();
             $departmentListName = $this->getDepartmentListName();
             if (!empty($formId) && !empty($departmentListName)) {
-                $form = $form->manager->getOne($formId);
+                $form = $this->formManager->getOne($formId);
                 if (!empty($form['prepared'])) {
                     $areaField = null;
                     $deptField = null;
