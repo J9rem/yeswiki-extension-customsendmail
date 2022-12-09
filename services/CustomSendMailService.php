@@ -729,7 +729,12 @@ class CustomSendMailService
     private function getFormIdAreaToDepartment(): string
     {
         $formId = $this->params->get('formIdAreaToDepartment');
-        return (!empty($formId) && (!is_scalar($formId) || strval($formId) != strval(intval($formId)) || intval($formId)<0))
+        return (
+            !empty($formId) &&
+            is_scalar($formId) &&
+            (strval($formId) == strval(intval($formId))) &&
+            intval($formId)<0
+        )
             ? strval($formId)
             : "";
     }
@@ -763,7 +768,7 @@ class CustomSendMailService
                             'form' => $form,
                             'field' => $areaField,
                             'formId' => $formId,
-                            'linkedObjectName' => $field->getLinkedObjectName(),
+                            'linkedObjectName' => $areaField->getLinkedObjectName(),
                             'deptField' => $deptField
                         ];
                     }
