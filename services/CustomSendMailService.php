@@ -141,7 +141,7 @@ class CustomSendMailService
                                     );
                                 }
                             }
-                            if ($mode == "members_and_profiles_in_area" && !empty($formData['areaFields'])) {
+                            if ($mode == "members_and_profiles_in_area" && (!empty($formData['areaFields']) || !empty($formData['association']))) {
                                 $this->processAreas($entry, $results, $formData, $areas, $suffix, $user, $callback, $appendDisplayData);
                             }
                         }
@@ -401,14 +401,31 @@ class CustomSendMailService
     {
         $parents = [];
         $areas = [];
-        $keyForParents = preg_quote(self::KEY_FOR_PARENTS, "/");
-        $keyForAreas = preg_quote(self::KEY_FOR_AREAS, "/");
-        $tag = WN_CAMEL_CASE_EVOLVED;
         $tagOrComa = "[\p{L}\-_.0-9,]+" ; // WN_CAMEL_CASE_EVOLVED + ","
-        if (preg_match_all("/data-id_fiche=\"($tag)\"[^>]+data-$keyForParents=\"($tagOrComa)\"[^>]*(?:data-$keyForAreas=\"($tagOrComa)\")?/", $renderedEntries, $matches)) {
+        $search = 'data-id_fiche="__tag__"';
+        $search = preg_quote($search, "/");
+        $search = str_replace('__tag__','('.WN_CAMEL_CASE_EVOLVED.')',$search);
+
+        $part1 = '__sep__data-__keyForParents__="__tagOrComa__"';
+        $part1 = str_replace('__keyForParents__',self::KEY_FOR_PARENTS,$part1);
+        $part1 = preg_quote($part1, "/");
+
+        $part2 = '__sep__data-__keyForAreas__="__tagOrComa__"';
+        $part2 = str_replace('__keyForAreas__',self::KEY_FOR_AREAS,$part2);
+        $part2 = preg_quote($part2, "/");
+        
+        $search = "/{$search}(?:$part1$part2|$part1)/";
+        $search = str_replace('__sep__','[^>]+',$search);
+        $search = str_replace('__tagOrComa__',"($tagOrComa)",$search);
+        
+        if (preg_match_all($search, $renderedEntries, $matches)) {
             foreach ($matches[0] as $idx => $match) {
                 $tag = $matches[1][$idx];
-                $parentsAsString = $matches[2][$idx];
+                $parentsAsString = !empty($matches[2][$idx])
+                    ? $matches[2][$idx]
+                    : (
+                        $matches[4][$idx]
+                    );
                 $areasAsString = $matches[3][$idx];
                 $currentParents = empty($parentsAsString) ? [] : explode(',', $parentsAsString);
                 if (!isset($parents[$tag])) {
