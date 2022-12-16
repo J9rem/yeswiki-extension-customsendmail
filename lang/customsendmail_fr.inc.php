@@ -11,7 +11,7 @@ return [
  */
     // actions/__BazarListeAction.php
     'CUSTOMSENDMAIL_PARENTS_TITLES' => 'Structures d\'intérêt',
-    'CUSTOMSENDMAIL_AREAS_TITLES' => 'Zones d\'intérêt',
+    'CUSTOMSENDMAIL_AREAS_TITLES' => 'Périmètre géographique',
     // actions/CustomSendmailAutoupdateLinkAction.php
     'CUSTOMSENDMAIL_AUTOUPDATE_RESERVED_TO_ADMIN' => 'Lien de mise à jour uniquement accessible aux administrateurs connectés',
     'CUSTOMSENDMAIL_AUTOUPDATE_TEXT' => 'Créer automatique la liste %{listName}',
@@ -44,9 +44,10 @@ return [
     'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_LABEL' => 'Filtrer les fiches',
     'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_HINT' => 'Filtre à partir des fiches mères (structures) où je suis administrateur',
     'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_ONLY_MEMBERS' => 'Uniquement les membres',
-    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_BY_AREA' => 'Membres ET profiles de la zone géographique',
+    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_BY_AREA' => 'Membres ET profils de la zone géographique',
     'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERSPARENT_FORM_LABEL' => 'Formulaire parent',
-    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_DISPLAY_FILTERS_LABEL' => 'Ajouter les fiches mères aux filtres',
+    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_DISPLAY_FILTERS_LABEL' => 'Ajouter les structures d\'intérêt et le périmètre géographique
+    aux facettes',
     'AB_BAZARTABLEAU_WITH_EMAIL_LABEL' => 'Tableau avec e-mails',
     // templates/bazar/send-mail.twig
     'CUSTOMSENDMAIL_DEFAULT_TITLE' => 'Envoyer un e-mail à :',

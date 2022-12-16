@@ -11,7 +11,7 @@ return [
  */
     // actions/__BazarListeAction.php
     'CUSTOMSENDMAIL_PARENTS_TITLES' => 'Interested structures',
-    'CUSTOMSENDMAIL_AREAS_TITLES' => 'Areas of interest',
+    'CUSTOMSENDMAIL_AREAS_TITLES' => 'Geographical scope',
     // actions/CustomSendmailAutoupdateLinkAction.php
     'CUSTOMSENDMAIL_AUTOUPDATE_RESERVED_TO_ADMIN' => 'Update link only available for connected administrators',
     'CUSTOMSENDMAIL_AUTOUPDATE_TEXT' => 'Create automatically the list %{listName}',
@@ -46,7 +46,7 @@ return [
     'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_ONLY_MEMBERS' => 'Only members',
     'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_BY_AREA' => 'Members AND profiles in area',
     'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERSPARENT_FORM_LABEL' => 'Parent form',
-    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_DISPLAY_FILTERS_LABEL' => 'Add parents entries to filters',
+    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_DISPLAY_FILTERS_LABEL' => 'Add structures of interest and geographical scope to filters',
     'AB_BAZARTABLEAU_WITH_EMAIL_LABEL' => 'Table with emails',
     // templates/bazar/send-mail.twig
     'CUSTOMSENDMAIL_DEFAULT_TITLE' => 'Send an email to :',
