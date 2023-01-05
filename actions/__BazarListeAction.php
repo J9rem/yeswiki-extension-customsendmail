@@ -22,7 +22,7 @@ class __BazarListeAction extends YesWikiAction
     public function formatArguments($arg)
     {
         $newArg = [];
-        if (!empty($arg['template']) && $arg['template'] == "send-mail"){
+        if (!empty($arg['template']) && $arg['template'] == "send-mail") {
             $newArg['dynamic'] = true;
             $newArg['pagination'] = -1;
             $arg['dynamic'] = true;
@@ -46,11 +46,11 @@ class __BazarListeAction extends YesWikiAction
                 $arg,
                 $_GET ?? [],
                 function (bool $isDynamic, bool $isAdmin, array $_arg) use ($selectmembers, $selectmembersdisplayfilters) {
-                    $replaceTemplate = !$isDynamic && !empty($selectmembers) && !$isAdmin;
+                    $replaceTemplate = !$isDynamic && !empty($selectmembers) ;
                     $options = ['selectmembers' => $selectmembers];
                     if ($selectmembersdisplayfilters) {
                         $groups = $this->formatArray($_GET['groups'] ?? $_arg['groups'] ?? null);
-                        if (!$isDynamic){
+                        if (!$isDynamic) {
                             $groupicons = $this->formatArray($_arg['groupicons'] ?? null);
                             $titles = $this->formatArray($_GET['titles'] ?? $_arg['titles'] ?? null);
                             array_unshift($groups, CustomSendMailService::KEY_FOR_PARENTS);

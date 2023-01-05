@@ -13,9 +13,17 @@ namespace YesWiki\Customsendmail\Service;
 
 interface GroupManagementServiceInterface
 {
-    public function getParentsWhereOwner($user, $formId): array;
     public function getParentsWhereAdminIds(array $parentsWhereOwner, array $user, string $groupSuffix, string $parentsForm): array;
-    public function getParentsIds(string $parentsForm): array;
-    public function getParent(string $parentsForm, string $tag): ?array;
-    public function isParent(string $tag, string $parentsForm): bool;
+    public function appendEntryWithData(array $entry, array &$results, string $key, $ids, $callback);
+    public function filterEntriesFromParents(
+        array $entries,
+        bool $entriesMode,
+        string $suffix,
+        string $parentFormId,
+        $extractExtraFields,
+        string $keyIntoAppendData,
+        $callbackForAppendData,
+        $extraCallback,
+        bool $extractAllIds
+    );
 }

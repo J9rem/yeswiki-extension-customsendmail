@@ -37,31 +37,33 @@ if (class_exists(MainGroupManagementService::class, false)) {
         {
             $this->wiki = $wiki;
         }
-        public function getParentsWhereOwner($user, $formId): array
-        {
-            $this->triggerErrorIfNeeded();
-            return [];
-        }
         public function getParentsWhereAdmin(array $parentsWhereOwner, array $user, string $groupSuffix, string $parentsForm): array
         {
             $this->triggerErrorIfNeeded();
             return [];
         }
-        public function getParentsIds(string $parentsForm): array
+
+        public function appendEntryWithData(array $entry, array &$results, string $key, $ids, $callback)
         {
+            // do nothing
+            $this->triggerErrorIfNeeded();
+        }
+
+        public function filterEntriesFromParents(
+            array $entries,
+            bool $entriesMode = true,
+            string $suffix =  '',
+            string $parentFormId =  '',
+            $extractExtraFields = null,
+            string $keyIntoAppendData = '',
+            $callbackForAppendData = null,
+            $extraCallback = null,
+            bool $extractAllIds = false
+        ): array {
             $this->triggerErrorIfNeeded();
             return [];
         }
-        public function getParent(string $parentsForm, string $tag): ?array
-        {
-            $this->triggerErrorIfNeeded();
-            return [];
-        }
-        public function isParent(string $tag, string $parentsForm): bool
-        {
-            $this->triggerErrorIfNeeded();
-            false;
-        }
+
         protected function triggerErrorIfNeeded()
         {
             if ($this->wiki->UserIsAdmin()) {

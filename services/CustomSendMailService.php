@@ -14,17 +14,11 @@ namespace YesWiki\Customsendmail\Service;
 use Configuration;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use YesWiki\Bazar\Field\CheckboxField;
-use YesWiki\Bazar\Field\CheckboxEntryField;
 use YesWiki\Bazar\Field\EmailField;
 use YesWiki\Bazar\Field\EnumField;
-use YesWiki\Bazar\Field\RadioEntryField;
-use YesWiki\Bazar\Field\SelectEntryField;
 use YesWiki\Bazar\Service\EntryManager;
 use YesWiki\Bazar\Service\FormManager;
 use YesWiki\Bazar\Service\ListManager;
-use YesWiki\Core\Service\AclService;
-use YesWiki\Core\Service\PageManager;
-use YesWiki\Core\Service\UserManager;
 use YesWiki\Customsendmail\Service\GroupManagementServiceInterface;
 use YesWiki\Wiki;
 
@@ -37,7 +31,6 @@ class CustomSendMailService
     public const KEY_FOR_PARENTS = "bf-custom-send-mail-parents";
     public const KEY_FOR_AREAS = "bf-custom-send-mail-areas";
 
-    protected $aclService;
     protected $areaAssociationCache;
     protected $areaAssociationForm;
     protected $entryManager;
@@ -46,24 +39,18 @@ class CustomSendMailService
     protected $formManager;
     protected $groupManagementService;
     protected $listManager;
-    protected $pageManager;
     protected $params;
     protected $postalCodeFieldName;
-    protected $userManager;
     protected $wiki;
 
     public function __construct(
-        AclService $aclService,
         EntryManager $entryManager,
         FormManager $formManager,
         GroupManagementServiceInterface $groupManagementService,
         ListManager $listManager,
-        PageManager $pageManager,
         ParameterBagInterface $params,
-        UserManager $userManager,
         Wiki $wiki
     ) {
-        $this->aclService = $aclService;
         $this->areaAssociationCache = null;
         $this->areaAssociationForm = null;
         $this->departmentList = null;
@@ -72,10 +59,8 @@ class CustomSendMailService
         $this->formManager = $formManager;
         $this->groupManagementService = $groupManagementService;
         $this->listManager = $listManager;
-        $this->pageManager = $pageManager;
         $this->params = $params;
         $this->postalCodeFieldName = null;
-        $this->userManager = $userManager;
         $this->wiki = $wiki;
     }
 
@@ -99,113 +84,68 @@ class CustomSendMailService
         $callback = null,
         bool $appendDisplayData = false
     ) {
-        if ($this->wiki->UserIsAdmin() && $entriesMode && !$appendDisplayData) {
-            return $entries;
-        } else {
-            $suffix = $this->getAdminSuffix();
-            if (empty($suffix)) {
-                return [];
-            } else {
-                $user = $this->userManager->getLoggedUser();
-                if (empty($user['name'])) {
-                    return [];
+        $suffix = $this->getAdminSuffix();
+        $areaData = ($mode == "members_and_profiles_in_area") ? null : [];
+        $filteredEntries = $this->groupManagementService->filterEntriesFromParents(
+            $entries,
+            $entriesMode,
+            $suffix,
+            $selectmembersparentform,
+            function (array &$formCache, string $formId, $user) use (&$areaData, $selectmembersparentform, $suffix) {
+                if (is_null($areaData)) {
+                    // lazy loading
+                    $areaData = $this->getAreas($selectmembersparentform, $suffix, $user);
                 }
-                if ($mode == "members_and_profiles_in_area") {
-                    extract($this->getAreas($selectmembersparentform, $suffix, $user));
+                $this->extractExtraFields($formCache, $formId, $areaData['fieldForArea'] ?? null);
+            },
+            self::KEY_FOR_PARENTS,
+            $callback,
+            function (array $entry, array &$results, array $formData, $user) use (&$areaData, $selectmembersparentform, $suffix, $mode, $callback, $appendDisplayData) {
+                if (is_null($areaData)) {
+                    // lazy loading
+                    $areaData = $this->getAreas($selectmembersparentform, $suffix, $user);
                 }
-                $results = [];
-                $formCache = [];
-                foreach ($entries as $key => $value) {
-                    if ($entriesMode) {
-                        $entry = $value;
-                    } elseif ($this->entryManager->isEntry($value)) {
-                        $entry = $this->entryManager->getOne($value);
-                    }
-                    if (!empty($entry['id_typeannonce'])) {
-                        $formId = $entry['id_typeannonce'];
-                        $formData = $this->extractFields($formId, $formCache, $fieldForArea ?? null, $selectmembersparentform);
-                        if (!empty($formData)) {
-                            if (!empty($formData['enumEntryFields'])) {
-                                $parentsIds = $this->isAdminOfParent($entry, $formData['enumEntryFields'], $suffix, $user['name'], $appendDisplayData);
-                                if (!empty($parentsIds)) {
-                                    $this->appendEntryWithData(
-                                        $entry,
-                                        $results,
-                                        $formData['form'],
-                                        $suffix,
-                                        $user,
-                                        $callback,
-                                        self::KEY_FOR_PARENTS,
-                                        $parentsIds,
-                                        $appendDisplayData
-                                    );
-                                }
-                            }
-                            if ($mode == "members_and_profiles_in_area" && (!empty($formData['areaFields']) || !empty($formData['association']))) {
-                                $this->processAreas($entry, $results, $formData, $areas, $suffix, $user, $callback, $appendDisplayData);
-                            }
-                        }
-                    }
+                if ($mode == "members_and_profiles_in_area" && (!empty($formData['areaFields']) || !empty($formData['association']))) {
+                    $this->processAreas($entry, $results, $formData, $areaData['areas'], $suffix, $user, $callback, $appendDisplayData);
                 }
-                if ($appendDisplayData) {
-                    foreach ($results as $entryId => $entry) {
-                        if (!empty($entry[self::KEY_FOR_PARENTS])) {
-                            $results[$entryId]['html_data'] = $results[$entryId]['html_data'] . " data-".self::KEY_FOR_PARENTS."=\"".htmlentities(implode(',', $entry[self::KEY_FOR_PARENTS]))."\"";
-                        }
-                        if (!empty($entry[self::KEY_FOR_AREAS])) {
-                            $results[$entryId]['html_data'] = $results[$entryId]['html_data'] . " data-".self::KEY_FOR_AREAS."=\"".htmlentities(implode(',', $entry[self::KEY_FOR_AREAS]))."\"";
-                        }
-                    }
+            },
+            $appendDisplayData
+        );
+        if (!empty($filteredEntries) && $appendDisplayData) {
+            foreach ($filteredEntries as $entryId => $entry) {
+                if (!empty($entry[self::KEY_FOR_PARENTS])) {
+                    $filteredEntries[$entryId]['html_data'] = $filteredEntries[$entryId]['html_data'] . " data-".self::KEY_FOR_PARENTS."=\"".htmlentities(implode(',', $entry[self::KEY_FOR_PARENTS]))."\"";
                 }
-                return $results;
+                if (!empty($entry[self::KEY_FOR_AREAS])) {
+                    $filteredEntries[$entryId]['html_data'] = $filteredEntries[$entryId]['html_data'] . " data-".self::KEY_FOR_AREAS."=\"".htmlentities(implode(',', $entry[self::KEY_FOR_AREAS]))."\"";
+                }
             }
         }
+        return $filteredEntries;
     }
 
     /**
-     * @param scalar $formId
      * @param array &$formCache
+     * @param scalar $formId
      * @param null|EnumField $fieldForArea
-     * @param string $selectmembersparentform
-     * @return array ['form'=>array'enumEntryFields'=>array,'areaFields' => [EnumField,EnumField],'association'=>?EnumField]
      */
-    private function extractFields($formId, array &$formCache, $fieldForArea, string $selectmembersparentform): array
+    public function extractExtraFields(array &$formCache, string $formId, $fieldForArea)
     {
-        if (empty($formId) || !is_scalar($formId) || strval($formId) != strval(intval($formId)) || intval($formId)<0) {
-            return [];
-        } elseif (!isset($formCache[$formId])) {
-            $formCache[$formId] = [];
-            $formCache[$formId]['form'] = $this->formManager->getOne($formId);
-            if (empty($formCache[$formId]['form']['prepared'])) {
-                $formCache[$formId]['form'] = [];
-            } else {
-                $formCache[$formId]['enumEntryFields'] = [];
-                $formCache[$formId]['areaFields'] = [];
-                $formCache[$formId]['association'] = null;
-                $areaAssociationForm = $this->getAreaAssociationForm();
-                foreach ($formCache[$formId]['form']['prepared'] as $field) {
-                    if (($field instanceof CheckboxEntryField ||
-                        $field instanceof RadioEntryField ||
-                        $field instanceof SelectEntryField) && (
-                            empty($selectmembersparentform) ||
-                            $field->getLinkedObjectName() == $selectmembersparentform
-                        )) {
-                        $formCache[$formId]['enumEntryFields'][] = $field;
-                    }
-                    if ($fieldForArea &&
-                        $field instanceof EnumField &&
-                        $field->getLinkedObjectName() === $fieldForArea->getLinkedObjectName()) {
-                        $formCache[$formId]['areaFields'][] = $field;
-                    }
-                    if (!empty($areaAssociationForm['linkedObjectName']) &&
-                        $field instanceof EnumField &&
-                        $field->getLinkedObjectName() === $areaAssociationForm['linkedObjectName']) {
-                        $formCache[$formId]['association'] = $field;
-                    }
-                }
+        $formCache[$formId]['areaFields'] = [];
+        $formCache[$formId]['association'] = null;
+        $areaAssociationForm = $this->getAreaAssociationForm();
+        foreach ($formCache[$formId]['form']['prepared'] as $field) {
+            if ($fieldForArea &&
+                $field instanceof EnumField &&
+                $field->getLinkedObjectName() === $fieldForArea->getLinkedObjectName()) {
+                $formCache[$formId]['areaFields'][] = $field;
+            }
+            if (!empty($areaAssociationForm['linkedObjectName']) &&
+                $field instanceof EnumField &&
+                $field->getLinkedObjectName() === $areaAssociationForm['linkedObjectName']) {
+                $formCache[$formId]['association'] = $field;
             }
         }
-        return $formCache[$formId];
     }
 
     public function displayEmailIfAdminOfParent(array $entries, ?array $arg): array
@@ -404,20 +344,20 @@ class CustomSendMailService
         $tagOrComa = "[\p{L}\-_.0-9,]+" ; // WN_CAMEL_CASE_EVOLVED + ","
         $search = 'data-id_fiche="__tag__"';
         $search = preg_quote($search, "/");
-        $search = str_replace('__tag__','('.WN_CAMEL_CASE_EVOLVED.')',$search);
+        $search = str_replace('__tag__', '('.WN_CAMEL_CASE_EVOLVED.')', $search);
 
         $part1 = '__sep__data-__keyForParents__="__tagOrComa__"';
-        $part1 = str_replace('__keyForParents__',self::KEY_FOR_PARENTS,$part1);
+        $part1 = str_replace('__keyForParents__', self::KEY_FOR_PARENTS, $part1);
         $part1 = preg_quote($part1, "/");
 
         $part2 = '__sep__data-__keyForAreas__="__tagOrComa__"';
-        $part2 = str_replace('__keyForAreas__',self::KEY_FOR_AREAS,$part2);
+        $part2 = str_replace('__keyForAreas__', self::KEY_FOR_AREAS, $part2);
         $part2 = preg_quote($part2, "/");
-        
+
         $search = "/{$search}(?:$part1$part2|$part1)/";
-        $search = str_replace('__sep__','[^>]+',$search);
-        $search = str_replace('__tagOrComa__',"($tagOrComa)",$search);
-        
+        $search = str_replace('__sep__', '[^>]+', $search);
+        $search = str_replace('__tagOrComa__', "($tagOrComa)", $search);
+
         if (preg_match_all($search, $renderedEntries, $matches)) {
             foreach ($matches[0] as $idx => $match) {
                 $tag = $matches[1][$idx];
@@ -480,44 +420,6 @@ class CustomSendMailService
         return compact(['parents','areas']);
     }
 
-    /**
-     * @param array $entry
-     * @param array $fields ! should be CheckboxEntryField or RadioEntryField or SelectEntryField
-     * @param string $suffix not empty
-     * @param string $loggedUserName nto empty
-     * @param bool $appendDisplayData
-     * @return array $parentsIds
-     */
-    private function isAdminOfParent(
-        array $entry,
-        array $fields,
-        string $suffix,
-        string $loggedUserName,
-        bool $appendDisplayData = false
-    ): array {
-        $parentsIds = [];
-        foreach ($fields as $field) {
-            $parentEntries = ($field instanceof CheckboxEntryField)
-                ? $field->getValues($entry)
-                : (
-                    !empty($entry[$field->getPropertyName()])
-                    ? [$entry[$field->getPropertyName()]]
-                    : []
-                );
-            $parentsForm = strval($field->getLinkedObjectName());
-            foreach ($parentEntries as $parentEntry) {
-                if ($this->isParentAdmin($parentEntry, $suffix, $loggedUserName, $parentsForm) &&
-                        !in_array($parentEntry, $parentsIds)) {
-                    $parentsIds[] = $parentEntry;
-                    if (!$appendDisplayData) {
-                        return $parentsIds;
-                    }
-                }
-            }
-        }
-        return $parentsIds;
-    }
-
     protected function getAreas($selectmembersparentform, $suffix, $user): array
     {
         $areaFieldName = $this->getAreaFieldName();
@@ -526,7 +428,7 @@ class CustomSendMailService
         if (!empty($areaFieldName) && !empty($selectmembersparentform)) {
             $fieldForArea = $this->formManager->findFieldFromNameOrPropertyName($areaFieldName, $selectmembersparentform);
             if (!empty($fieldForArea) && $fieldForArea instanceof EnumField) {
-                $parentsWhereAdmin = $this->getParentsWhereAdmin($selectmembersparentform, $suffix, $user['name']);
+                $parentsWhereAdmin = $this->groupManagementService->getParentsWhereAdmin($selectmembersparentform, $suffix, $user['name']);
                 foreach ($parentsWhereAdmin as $idFiche => $entry) {
                     if ($fieldForArea instanceof CheckboxField) {
                         $newAreas = $fieldForArea->getValues($entry);
@@ -607,16 +509,16 @@ class CustomSendMailService
 
             // save areas
             if (!empty($validatedAreas)) {
-                $this->appendEntryWithData(
+                $this->groupManagementService->appendEntryWithData(
                     $entry,
                     $results,
-                    $formData['form'],
-                    $suffix,
-                    $user,
-                    $callback,
-                    self::KEY_FOR_AREAS,
+                    $appendDisplayData ? self::KEY_FOR_AREAS : '',
                     $validatedAreas,
-                    $appendDisplayData
+                    function ($internalEntry) use ($formData, $suffix, $user, $callback) {
+                        return (is_callable($callback))
+                          ? $callback($internalEntry, $formData['form'], $suffix, $user)
+                          : $internalEntry;
+                    }
                 );
                 if ($appendDisplayData) {
                     $validatedParentsIds = [];
@@ -629,79 +531,20 @@ class CustomSendMailService
                         }
                     }
                     if (!empty($validatedParentsIds)) {
-                        $this->appendEntryWithData(
+                        $this->groupManagementService->appendEntryWithData(
                             $entry,
                             $results,
-                            $formData['form'],
-                            $suffix,
-                            $user,
-                            $callback,
                             self::KEY_FOR_PARENTS,
                             $validatedParentsIds,
-                            true
+                            function ($internalEntry) use ($formData, $suffix, $user, $callback) {
+                                return (is_callable($callback))
+                                  ? $callback($internalEntry, $formData['form'], $suffix, $user)
+                                  : $internalEntry;
+                            }
                         );
                     }
                 }
             }
-        }
-    }
-
-    protected function appendEntryWithData(
-        array $entry,
-        array &$results,
-        ?array $form,
-        ?string $suffix,
-        $user,
-        $callback,
-        string $key,
-        $ids,
-        bool $appendDisplayData = false
-    ) {
-        if (!in_array($entry['id_fiche'], array_keys($results))) {
-            $results[$entry['id_fiche']] =  is_callable($callback) ? $callback($entry, $form, $suffix, $user) : $entry;
-        }
-        if ($appendDisplayData) {
-            if (!isset($results[$entry['id_fiche']][$key])) {
-                $results[$entry['id_fiche']][$key] = [];
-            }
-            foreach ($ids as $id) {
-                if (!in_array($id, $results[$entry['id_fiche']][$key])) {
-                    $results[$entry['id_fiche']][$key][] = $id;
-                }
-            }
-        }
-    }
-
-    private function getParentsWhereAdmin(string $id, string $suffix, string $loggedUserName): array
-    {
-        $parentsWhereOwner = $this->groupManagementService->getParentsWhereOwner(['name'=>$loggedUserName], $id);
-        $parentsWhereAdminIds = $this->groupManagementService->getParentsWhereAdminIds(
-            $parentsWhereOwner,
-            ['name'=>$loggedUserName],
-            $suffix,
-            $id
-        );
-
-        return array_filter(array_map(function ($entryId) use ($id) {
-            return empty($entryId) ? null : $this->groupManagementService->getParent($id, $entryId);
-        }, $parentsWhereAdminIds), function ($entry) use ($loggedUserName) {
-            return !empty($entry) && !empty($entry['id_fiche']) && $this->aclService->hasAccess('read', $entry['id_fiche'], $loggedUserName);
-        });
-    }
-
-    private function isParentAdmin(string $entryId, string $suffix, string $loggedUserName, string $parentsForm): bool
-    {
-        if (!$this->groupManagementService->isParent($entryId, $parentsForm) ||
-            !$this->aclService->hasAccess('read', $entryId, $loggedUserName)) {
-            return false;
-        } elseif ($this->wiki->UserIsAdmin($loggedUserName)) {
-            return true;
-        } else {
-            $parentOwner = $this->pageManager->getOwner($entryId);
-            $groupName = "{$entryId}$suffix";
-            $groupAcl = $this->wiki->GetGroupACL($groupName);
-            return ((!empty($parentOwner) && $parentOwner == $loggedUserName) ||
-                (!empty($groupAcl) && $this->aclService->check($groupAcl, $loggedUserName, true)));
         }
     }
 
