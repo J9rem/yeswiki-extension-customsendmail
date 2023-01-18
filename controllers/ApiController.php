@@ -424,7 +424,7 @@ class ApiController extends YesWikiController
         $addcontactstoreplyto =  filter_input(INPUT_POST, 'addcontactstoreplyto', FILTER_VALIDATE_BOOL);
         $receivehiddencopy = filter_input(INPUT_POST, 'receivehiddencopy', FILTER_VALIDATE_BOOL);
         $selectmembers = filter_input(INPUT_POST, 'selectmembers', FILTER_UNSAFE_RAW);
-        $selectmembers = in_array($selectmembers, ["members_and_profiles_in_area","only_members"], true) ? "" : "";
+        $selectmembers = in_array($selectmembers, ["members_and_profiles_in_area","only_members"], true) ? $selectmembers : "";
         $selectmembersparentform = (!empty($_POST['selectmembersparentform']) && is_scalar($_POST['selectmembersparentform'])
             && strval($_POST['selectmembersparentform']) == intval($_POST['selectmembersparentform']) && intval($_POST['selectmembersparentform']) > 0)
             ? strval($_POST['selectmembersparentform']) : "";
