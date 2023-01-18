@@ -90,22 +90,38 @@ class ApiController extends YesWikiController
         $fieldCache = [];
         $emailfieldname = filter_input(INPUT_POST, 'emailfieldname', FILTER_UNSAFE_RAW);
         $emailfieldname = in_array($emailfieldname, [null,false], true) ? "" : htmlspecialchars(strip_tags($emailfieldname));
-        $customSendMailService->filterEntriesFromParents(
-            $params['contacts'],
-            false,
-            $params['selectmembers'],
-            $params['selectmembersparentform'],
-            function ($entry, $form, $suffix, $user) use (&$contacts, &$fieldCache, $emailfieldname, $entryManager) {
-                $field = $this->getEmailField($form, $fieldCache, $emailfieldname);
-                if (!empty($field)) {
-                    $propName = $field->getPropertyName();
-                    $realEntry = $entryManager->getOne($entry['id_fiche'], false, null, true, true);
-                    if (!empty($realEntry[$propName]) && !empty($entry['id_fiche']) && !isset($contacts[$entry['id_fiche']]) && !in_array($realEntry[$propName], $contacts)) {
-                        $contacts[$entry['id_fiche']] = $realEntry[$propName];
+        if (empty($params['selectmembers']) && $isAdmin){
+            $forms = [];
+            foreach($params['contacts'] as $entryId){
+                $entry = $entryManager->getOne($entryId, false, null, true, true);
+                if (!empty($entry['id_typeannonce']) && 
+                    is_scalar($entry['id_typeannonce']) &&
+                    intval($entry['id_typeannonce']) > 0){
+                    $formId = strval($entry['id_typeannonce']);
+                    if (empty($forms[$formId])){
+                        $formManager = $this->getService(FormManager::class);
+                        $form = $formManager->getOne($formId);
+                        if (!empty($form['prepared'])){
+                            $forms[$formId] = $form;
+                        }
+                    }
+                    if (!empty($forms[$formId])){
+                        $form = $forms[$formId];
+                        $this->updateContactsFromForm($form,$entry,$contacts,$fieldCache,$emailfieldname,$entryManager);
                     }
                 }
             }
-        );
+        } else {
+            $customSendMailService->filterEntriesFromParents(
+                $params['contacts'],
+                false,
+                $params['selectmembers'],
+                $params['selectmembersparentform'],
+                function ($entry, $form, $suffix, $user) use (&$contacts, &$fieldCache, $emailfieldname, $entryManager) {
+                    $this->updateContactsFromForm($form,$entry,$contacts,$fieldCache,$emailfieldname,$entryManager);
+                }
+            );
+        }
         unset($fieldCache);
 
         if (empty($contacts)) {
@@ -166,6 +182,24 @@ class ApiController extends YesWikiController
             return new ApiResponse(['error' => 'Part of messages not sent'], Response::HTTP_INTERNAL_SERVER_ERROR);
         } else {
             return new ApiResponse(['error' => 'message not sent'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    private function updateContactsFromForm(
+     array $form, 
+     array $entry, 
+     array &$contacts, 
+     array &$fieldCache, 
+     string $emailfieldname, 
+     $entryManager
+   ) {
+        $field = $this->getEmailField($form, $fieldCache, $emailfieldname);
+        if (!empty($field)) {
+            $propName = $field->getPropertyName();
+            $realEntry = $entryManager->getOne($entry['id_fiche'], false, null, true, true);
+            if (!empty($realEntry[$propName]) && !empty($entry['id_fiche']) && !isset($contacts[$entry['id_fiche']]) && !in_array($realEntry[$propName], $contacts)) {
+                $contacts[$entry['id_fiche']] = $realEntry[$propName];
+            }
         }
     }
 
