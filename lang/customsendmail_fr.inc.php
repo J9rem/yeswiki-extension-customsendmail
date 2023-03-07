@@ -49,6 +49,7 @@ return [
     'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_DISPLAY_FILTERS_LABEL' => 'Ajouter les structures d\'intérêt et le périmètre géographique
     aux facettes',
     'AB_BAZARTABLEAU_WITH_EMAIL_LABEL' => 'Tableau avec e-mails',
+    'CUSTOMSENDMAIL_SENDMAIL_SENDTOGROUPDEFAULT_LABEL' => 'Par défaut, envoyer à tous',
     // templates/bazar/send-mail.twig
     'CUSTOMSENDMAIL_DEFAULT_TITLE' => 'Envoyer un e-mail à :',
     'CUSTOMSENDMAIL_LAST_UPDATE' => 'Dernière maj : %{date}',

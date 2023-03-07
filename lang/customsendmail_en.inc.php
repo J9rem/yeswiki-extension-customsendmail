@@ -48,6 +48,7 @@ return [
     'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERSPARENT_FORM_LABEL' => 'Parent form',
     'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_DISPLAY_FILTERS_LABEL' => 'Add structures of interest and geographical scope to filters',
     'AB_BAZARTABLEAU_WITH_EMAIL_LABEL' => 'Table with emails',
+    'CUSTOMSENDMAIL_SENDMAIL_SENDTOGROUPDEFAULT_LABEL' => 'By default, send to all',
     // templates/bazar/send-mail.twig
     'CUSTOMSENDMAIL_DEFAULT_TITLE' => 'Send an email to :',
     'CUSTOMSENDMAIL_LAST_UPDATE' => 'Last update : %{date}',

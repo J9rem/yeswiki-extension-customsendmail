@@ -514,6 +514,7 @@ let componentParams = {
         params(){
             this.subject = this.sanitizeString(this.params,'defaultsubject','');
             this.emailfieldname = this.sanitizeString(this.params,'emailfieldname','bf_mail');
+            this.sendToGroup = ('sendtogroupdefault' in this.params && [1,true,'true'].includes(this.params.sendtogroupdefault));
             this.$nextTick(()=>{
                 if (this.senderName.length == 0){
                     this.senderName = this.sanitizeString(this.params,'defaultsendername',"");
@@ -535,9 +536,6 @@ let componentParams = {
             this.secureUpdatePreview();
         },
         senderEmail(){
-            this.secureUpdatePreview();
-        },
-        sendToGroup(){
             this.secureUpdatePreview();
         },
         sendToGroup(){

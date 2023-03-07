@@ -91,6 +91,11 @@ trait ActionsBuilderServiceCommon
                                 'type' => 'text',
                                 'default' => _t('CUSTOMSENDMAIL_SENDMAIL_DEFAULTCONTENT'),
                             ],
+                            'sendtogroupdefault' => [
+                                'label' => _t('CUSTOMSENDMAIL_SENDMAIL_SENDTOGROUPDEFAULT_LABEL'),
+                                'type' => 'checkbox',
+                                'default' => 'false'
+                            ]
                         ],
                     ];
                 }
