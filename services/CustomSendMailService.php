@@ -322,13 +322,15 @@ class CustomSendMailService
             } else {
                 $index = 0;
             }
-            $newFilters[self::KEY_FOR_PARENTS] = [
-                "icon" => "",
-                "title" => _t('CUSTOMSENDMAIL_PARENTS_TITLES'),
-                "collapsed" => false,
-                "index" => $index,
-                "list" => $parentList
-            ];
+            if (count($parentList) > 1){
+                $newFilters[self::KEY_FOR_PARENTS] = [
+                    "icon" => "",
+                    "title" => _t('CUSTOMSENDMAIL_PARENTS_TITLES'),
+                    "collapsed" => false,
+                    "index" => $index,
+                    "list" => $parentList
+                ];
+            }
             foreach ($filters as $key => $value) {
                 $newFilters[$key] = $value;
             }
