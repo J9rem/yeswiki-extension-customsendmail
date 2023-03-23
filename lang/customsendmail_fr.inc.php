@@ -10,7 +10,7 @@ return [
  * file that was distributed with this source code.
  */
     // actions/__BazarListeAction.php
-    'CUSTOMSENDMAIL_PARENTS_TITLES' => 'Structures d\'intérêt',
+    'CUSTOMSENDMAIL_PARENTS_TITLES' => 'Sélectionnez une structure',
     'CUSTOMSENDMAIL_AREAS_TITLES' => 'Périmètre géographique',
     // actions/CustomSendmailAutoupdateLinkAction.php
     'CUSTOMSENDMAIL_AUTOUPDATE_RESERVED_TO_ADMIN' => 'Lien de mise à jour uniquement accessible aux administrateurs connectés',
