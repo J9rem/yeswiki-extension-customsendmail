@@ -622,6 +622,7 @@ let componentParams = {
                                     <span> <slot name="addsendertoreplyto"/></span>
                                 </label>
                             </div>
+                            <slot name="hascontactfrom"/>
                             <div class="form-group">
                                 <label class="no-dblclick">
                                     <input type="checkbox" @click="addContactsToReplyTo=!addContactsToReplyTo" :checked="addContactsToReplyTo" :disabled="!sendToGroup">
