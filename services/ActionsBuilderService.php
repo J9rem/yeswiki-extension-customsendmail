@@ -144,6 +144,7 @@ trait ActionsBuilderServiceCommon
                     ];
                 }
             }
+            $this->wiki->AddJavascriptFile('tools/customsendmail/javascripts/actions-builder-post-update.js',true);
         }
         return $this->data;
     }
