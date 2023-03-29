@@ -8,13 +8,14 @@
  */
 
 import SpinnerLoader from '../../../bazar/presentation/javascripts/components/SpinnerLoader.js'
+import NbDest from './nb-dest.js'
 
 let componentName = 'BazarSendMail';
 let isVueJS3 = (typeof Vue.createApp == "function");
 
 let componentParams = {
     props: ['params','entries','hascontactfrom','ready','root','isadmin'],
-    components: { SpinnerLoader},
+    components: { SpinnerLoader,NbDest},
     data: function() {
         return {
             addContactsToReplyTo: false,
@@ -598,6 +599,7 @@ let componentParams = {
                         <a id="return-param" href="#draft-part" class="btn btn-xs btn-secondary-2">
                             <i class="far fa-file-alt"></i> <slot name="seedraft"/>
                         </a>
+                        <NbDest :availableentries="availableEntries" :bazarsendmail="this"></NbDest>
                         <div class="form-group">
                           <label><slot name="sendername"/></label>
                           <input type="text" class="form-control" v-model="senderName" :placeholder="fromSlot('sendername')">
@@ -610,6 +612,10 @@ let componentParams = {
                           <label><slot name="defaultsubject"/></label>
                           <input type="text" class="form-control" v-model="subject" required="true" :placeholder="fromSlot('subjectplaceholder')">
                         </div>
+                        <button type="button" class="btn btn-default btn-xs" data-toggle="collapse" :data-target="'#advanced-params-'+this.uid">
+                          <span v-show="!advancedParamsVisibles"><slot name="see"/></span>
+                          <span v-show="advancedParamsVisibles"><slot name="hide"/></span>
+                        </button>
                         <div :id="'advanced-params-'+this.uid" class="collapse" ref="advancedParams">`
                             // <div class="form-group">
                             //     <label class="no-dblclick">
@@ -660,10 +666,7 @@ let componentParams = {
                                 </div>
                             </div>
                         </div>
-                        <button type="button" class="btn btn-default btn-xs" data-toggle="collapse" :data-target="'#advanced-params-'+this.uid">
-                          <span v-show="!advancedParamsVisibles"><slot name="see"/></span>
-                          <span v-show="advancedParamsVisibles"><slot name="hide"/></span>
-                        </button>
+                        <div><NbDest :availableentries="availableEntries" :bazarsendmail="this"></NbDest></div>
                         <slot name="textarea"/>
                         <div class="clearfix"></div>
                         <div class="form-group" v-if="!sendToGroup"><slot name="help"/></div>
@@ -674,7 +677,8 @@ let componentParams = {
                         <slot name="hascontactfrom"/>
                         <div id="draft-part" class="form-group well" style="min-height:300px;width:100%;">
                             <label><slot name="preview"/></label><br>
-                            <i><slot name="previewsize"/> <span ref="previewsize"></span></i>
+                            <i><slot name="previewsize"/> <span ref="previewsize"></span></i><br/>
+                            <NbDest :availableentries="availableEntries" :bazarsendmail="this"></NbDest>
                             <hr/>
                             <div ref="preview"></div>
                         </div>
