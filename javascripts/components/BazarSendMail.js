@@ -293,6 +293,15 @@ let componentParams = {
                 )
             })
         },
+        sortAvailableEntriesCkeckedFirst(){
+            this.availableEntries.sort((a,b)=>{
+                return (this.isChecked(a) !== this.isChecked(b))
+                    ? (
+                        this.isChecked(a) ? -1 : 1
+                    )
+                    : a.id_fiche.localeCompare(b.id_fiche)
+            })
+        },
         toogleAddresse(event){
             this.checkAll = false;
             let entryId = event.target.getAttribute('name');
@@ -379,6 +388,7 @@ let componentParams = {
                     this.cacheEntriesDisplay[entry.id_fiche].auth &&
                     this.cacheEntriesDisplay[entry.id_fiche].display ;
             }).map((key)=>this.entries[key]);
+            this.sortAvailableEntriesCkeckedFirst()
             if (this.ready && this.canShow(this.availableEntries) && !this.summernoteInit){
                 this.$nextTick(()=>this.loadSummernoteWithLang());
             }
