@@ -313,13 +313,21 @@ let componentParams = {
             this.updatePreview(this.getContentsForUpdate(),{});
         },
         toggleCheckAll(){
+            let availableIds = Object.keys(this.availableEntries).map((key)=>{
+                return this.availableEntries[key].id_fiche
+            })
             if (this.checkAll){
-                this.selectedAddresses = [];
+                this.selectedAddresses = this.selectedAddresses.filter((id)=>{
+                    return !availableIds.includes(id)
+                })
                 this.checkAll = false;
             } else {
-                this.selectedAddresses = Object.keys(this.availableEntries).map((key)=>{
-                    return this.availableEntries[key].id_fiche;
-                });
+                this.selectedAddresses = [
+                    ...this.selectedAddresses.filter((id)=>{
+                        return !availableIds.includes(id)
+                    }),
+                    ...availableIds
+                ]
                 this.checkAll = true;
             }
             this.updatePreview(this.getContentsForUpdate(),{});
@@ -569,7 +577,7 @@ let componentParams = {
                     <div class="col-sm-4">
                 <h4><slot name="title"/></h4>
                         <label class="no-dblclick">
-                            <input type="checkbox" @click="toggleCheckAll" :checked="checkAll"><span> <slot name="checkall"/></span>
+                            <input type="checkbox" @click="toggleCheckAll" :checked="checkAll"><span> <slot v-if="!checkAll" name="checkall"/><slot v-else name="uncheckall"/></span>
                         </label>
                         <br>
                         <ul class="list-unstyled">

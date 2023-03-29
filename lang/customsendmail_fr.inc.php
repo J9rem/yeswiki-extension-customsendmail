@@ -78,8 +78,10 @@ return [
         "{entryEditLink} => lien vers la modification de la fiche (brut)\n".
         "{entryEditLinkWithText} => lien vers la modification de la fiche (avec le titre \"Modifier la fiche\")\n",
     'CUSTOMSENDMAIL_ADMINPART' => 'Visible uniquement par les administrateurices du site',
+    'CUSTOMSENDMAIL_CHECKALL' => 'Cocher tout ce qui est visible',
     'CUSTOMSENDMAIL_PLURAL_NB_DEST_TEXT' => 'Actuellement {nb} destinataires',
     'CUSTOMSENDMAIL_SEE_DRAFT' => 'Voir le brouillon',
     'CUSTOMSENDMAIL_SINGULAR_NB_DEST_TEXT' => 'Actuellement {nb} destinataire',
     'CUSTOMSENDMAIL_RETURN_PARAM' => 'Retourner aux paramètres',
+    'CUSTOMSENDMAIL_UNCHECKALL' => 'Décocher tout ce qui est visible',
 ];

@@ -71,8 +71,10 @@ return [
     'CUSTOMSENDMAIL_SEE' => 'See advanced parameters',
     'CUSTOMSENDMAIL_HIDE' => 'Hide advanced parameters',
     'CUSTOMSENDMAIL_ADMINPART' => 'Only visible by admins',
+    'CUSTOMSENDMAIL_CHECKALL' => 'Check all visible',
     'CUSTOMSENDMAIL_PLURAL_NB_DEST_TEXT' => 'Currently {nb} addresses',
     'CUSTOMSENDMAIL_SEE_DRAFT' => 'See draft',
     'CUSTOMSENDMAIL_SINGULAR_NB_DEST_TEXT' => 'Currently {nb} addresse',
     'CUSTOMSENDMAIL_RETURN_PARAM' => 'Return to parameters',
+    'CUSTOMSENDMAIL_UNCHECKALL' => 'Uncheck all visible',
 ];
