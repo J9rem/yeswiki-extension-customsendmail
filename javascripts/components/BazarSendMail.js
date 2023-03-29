@@ -56,122 +56,14 @@ let componentParams = {
           }
           return true;
         },
-        updateStatus(entriesIds){
-            if (entriesIds.length>0){
-                entriesIds.forEach((entryId)=>{
-                    this.updatingIds.push(entryId);
-                });
-                // 1. Create a new XMLHttpRequest object
-                let xhr = new XMLHttpRequest();
-                // 2. Configure it: POST-request
-                xhr.open('POST',wiki.url('?api/customsendmail/filterentries'));
-                let data = this.prepareFormData({
-                    entriesIds,
-                    params: {
-                        selectmembers: this.params.selectmembers || "",
-                        selectmembersparentform: String(this.params.selectmembersparentform || "")
-                    }
-                });
-                // 3. Listen load
-                xhr.onload = () =>{
-                    if (xhr.status == 200){
-                        let responseDecoded = JSON.parse(xhr.response);
-                        if (responseDecoded && responseDecoded.hasOwnProperty('entriesIds') && Array.isArray(responseDecoded.entriesIds)){
-                            let newSelectedAddrresses = [];
-                            let idsToRemoveFromSearchedEntries = [];
-                            entriesIds.forEach((id)=>{
-                                if (!this.cacheEntriesDisplay.hasOwnProperty(id)){
-                                    this.cacheEntriesDisplay[id] = {
-                                        display: true,
-                                        auth: true
-                                    }
-                                }
-                                this.cacheEntriesDisplay[id].auth = responseDecoded.entriesIds.includes(id);
-                                if (this.cacheEntriesDisplay[id].auth){
-                                    newSelectedAddrresses.push(id);
-                                } else {
-                                    idsToRemoveFromSearchedEntries.push(id);
-                                }
-                            });
-                            if (newSelectedAddrresses.length > 0){
-                                this.selectedAddresses = [...this.selectedAddresses,...newSelectedAddrresses];
-                            }
-                            this.removeFromSearchedEntries(idsToRemoveFromSearchedEntries);
-                        }
-                    }
-                    this.removeIdsFromUpdating(entriesIds);
-                }
-                // 4 .listen error
-                xhr.onerror = () => {
-                    this.removeIdsFromUpdating(entriesIds);
-                };
-                // 5. Send the request over the network
-                xhr.send(data);
+        canShow(entries){
+            if (typeof entries == undefined){
+                entries = this.availableEntries
             }
+            this.$nextTick(()=>this.initBsEvents());
+            return Object.keys(entries).length > 0;
         },
-        removeIdsFromUpdating(entriesIds){
-            this.updatingIds = this.updatingIds.filter((entryId)=>!entriesIds.includes(entryId));
-            this.updateAvailableEntries();
-        },
-        updateAvailableEntries(){
-            this.availableEntries = Object.keys(this.entries).filter((key)=>{
-                let entry = this.entries[key];
-                return entry.id_fiche && 
-                    entry.id_fiche.length > 0 && 
-                    this.cacheEntriesDisplay.hasOwnProperty(entry.id_fiche) &&
-                    this.cacheEntriesDisplay[entry.id_fiche].auth &&
-                    this.cacheEntriesDisplay[entry.id_fiche].display ;
-            }).map((key)=>this.entries[key]);
-            if (this.ready && this.canShow(this.availableEntries) && !this.summernoteInit){
-                this.$nextTick(()=>this.loadSummernoteWithLang());
-            }
-        },
-        toggleCheckAll: function(){
-            if (this.checkAll){
-                this.selectedAddresses = [];
-                this.checkAll = false;
-            } else {
-                this.selectedAddresses = Object.keys(this.availableEntries).map((key)=>{
-                    return this.availableEntries[key].id_fiche;
-                });
-                this.checkAll = true;
-            }
-            this.updatePreview(this.getContentsForUpdate(),{});
-        },
-        toogleAddresse: function(event){
-            this.checkAll = false;
-            let entryId = event.target.getAttribute('name');
-            if (this.selectedAddresses.includes(entryId)){
-                this.selectedAddresses = this.selectedAddresses.filter((id)=>id!=entryId)
-            } else {
-                this.selectedAddresses.push(entryId);
-            }
-            this.updatePreview(this.getContentsForUpdate(),{});
-        },
-        sanitizeString: function(objet,name,defaultValue){
-            return (typeof object === "object" &&
-                objet.hasOwnProperty(name) && 
-                typeof objet[name] === "string" &&
-                objet[name].length > 0) 
-                ? objet[name]
-                : defaultValue;
-        },
-        fromSlot: function(name){
-            if (typeof this.$scopedSlots[name] == "function"){
-                let slot = (this.$scopedSlots[name])();
-                if (typeof slot == "object"){
-                    return slot[0].text;
-                }
-            }
-            return "";
-        },
-        getUID(){
-            return ( (( 1+Math.random()) * 0x10000 ) | 0 ).toString( 16 ).substring( 1 );
-        },
-        isChecked(entry){
-            return this.selectedAddresses.includes(entry.id_fiche);
-        },
-        finishPreviewUpdate: function(){
+        finishPreviewUpdate(){
             if (this.nextPreviewTobeRetrieved){
                 if (this.nextContentForPreview.length == 0){
                   this.updatingPreview = false;
@@ -186,105 +78,16 @@ let componentParams = {
                 this.nextContentForPreview = [];
             }
         },
-        updatePreview: function(contents, options){
-            if ((options.forced == undefined || !options.forced) && this.updatingPreview){
-                this.nextPreviewTobeRetrieved = true;
-                this.nextContentForPreview.push(contents);
-              } else {
-                this.updatingPreview = true;
-                let dataToSend= this.getData();
-                dataToSend.message = contents;
-                
-                // 1. Create a new XMLHttpRequest object
-                let xhr = new XMLHttpRequest();
-                // 2. Configure it: POST-request
-                xhr.open('POST',wiki.url('?api/customsendmail/preview'));
-                let data = this.prepareFormData(dataToSend);
-                // 3. Listen load
-                xhr.onload = () =>{
-                    if (xhr.status == 200){
-                        let responseDecoded = JSON.parse(xhr.response);
-                        if (typeof responseDecoded == "object"){
-                            this.htmlPreview = responseDecoded.html || "<b>Error !</b>";
-                            this.sizePreview = responseDecoded.size || "Error !";
-                        }
-                    }
-                    this.finishPreviewUpdate();
-                }
-                // 4 .listen error
-                xhr.onerror = () => {
-                    this.finishPreviewUpdate();
-                };
-                // 5. Send the request over the network
-                xhr.send(data);
-            }
-        },
-        prepareFormData(thing){
-            let formData = new FormData();
-            if (typeof thing == "object"){
-                let preForm =this.toPreFormData(thing);
-                for (const key in preForm) {
-                    formData.append(key,preForm[key]);
+        fromSlot(name){
+            if (typeof this.$scopedSlots[name] == "function"){
+                let slot = (this.$scopedSlots[name])();
+                if (typeof slot == "object"){
+                    return slot[0].text;
                 }
             }
-            return formData;
+            return "";
         },
-        toPreFormData: function(thing,key =""){
-            let type = typeof thing;
-            switch (type) {
-                case 'boolean':
-                case 'number':
-                case 'string':
-                    return {
-                        [key]:thing
-                    };
-                case 'object':
-                    if (Object.keys(thing).length > 0){
-                        let result = {};
-                        for (const propkey in thing) {
-                            result = {
-                                ...result,
-                                ...this.toPreFormData(
-                                    thing[propkey],
-                                    (key.length == 0) ? propkey : `${key}[${propkey}]`
-                                )
-                            }
-                        }
-                        return result;
-                    } else if (thing === null) {
-                        return {
-                            [key]:null
-                        };
-                    } else {
-                        return {
-                            [key]: []
-                        };
-                    }
-                
-                case 'array':
-                    if (thing.length == 0){
-                        return {
-                            [key]: []
-                        };
-                    }
-                    let result = {};
-                    thing.forEach((val,propkey)=>{
-                        result = {
-                            ...result,
-                            ...this.toPreFormData(
-                                val,
-                                (key.length == 0) ? propkey : `${key}[${propkey}]`
-                            )
-                        }
-                    });
-                    return result;
-                default:
-                    return {
-                        [key]:null
-                    };
-            }
-        },
-        getContentsForUpdate: function(){
+        getContentsForUpdate(){
             let textearea = $(this.$el).find(`textarea.form-control.summernote[name=message]`);
             if (textearea == undefined || textearea.length == 0){
               return "Error summernote not found !";
@@ -292,7 +95,7 @@ let componentParams = {
               return $(textearea).summernote('code');
             }
         },
-        getData: function (){
+        getData (){
             let availableIds = this.availableEntries.map((entry)=>entry.id_fiche);
             return {
                 senderName: this.senderName,
@@ -309,22 +112,21 @@ let componentParams = {
                 selectmembersparentform: this.params.selectmembersparentform || '',
             };
         },
-        loadSummernoteWithLang: function (){
-            if (this.summernoteInit){
-                return;
-            }
-            if (wiki.locale == "en"){
-                this.loadSummernote({});
-            } else {
-                let langName = wiki.locale.toLowerCase() + '-' + wiki.locale.toUpperCase();
-                let scriptUrl = wiki.baseUrl.replace(/\?$/,"");
-                scriptUrl = scriptUrl + `tools/bazar/libs/vendor/summernote/lang/summernote-${langName}.js`;
-                // load script
-                $("body").append($('<script>').attr("src",scriptUrl));
-                this.loadSummernote({lang:langName});
+        getUID(){
+            return ( (( 1+Math.random()) * 0x10000 ) | 0 ).toString( 16 ).substring( 1 );
+        },
+        initBsEvents(){
+            let advancedParamsContainer = $(this.$refs.advancedParams);
+            if(!this.bsEventInit && advancedParamsContainer != undefined && advancedParamsContainer.length > 0){
+                this.bsEventInit = true;
+                advancedParamsContainer.on('show.bs.collapse',()=>{this.advancedParamsVisibles = true});
+                advancedParamsContainer.on('hide.bs.collapse',()=>{this.advancedParamsVisibles = false});
             }
         },
-        loadSummernote: function (langOptions){
+        isChecked(entry){
+            return this.selectedAddresses.includes(entry.id_fiche);
+        },
+        loadSummernote (langOptions){
             if (this.summernoteInit){
                 return;
             }
@@ -361,54 +163,54 @@ let componentParams = {
               }
             }});
         },
-        updateSenderEmailFromLoggedUser: function(){
-                // 1. Create a new XMLHttpRequest object
-                let xhr = new XMLHttpRequest();
-                // 2. Configure it: POST-request
-                xhr.open('GET',wiki.url('?api/customsendmail/currentuseremail'));
-                // 3. Listen load
-                xhr.onload = () =>{
-                    if (xhr.status == 200){
-                        let responseDecoded = JSON.parse(xhr.response);
-                        if (typeof responseDecoded == "object" && responseDecoded.hasOwnProperty('email') && 
-                            responseDecoded.email.length > 0){
-                            this.senderEmail = responseDecoded.email;
-                            if (responseDecoded.hasOwnProperty('name') && responseDecoded.name.length > 0 && this.senderName.length == 0){
-                                this.senderName = responseDecoded.name;
-                            }
-                            return ;
-                        }
-                    }
-                    this.senderEmail = this.fromSlot('defaultsenderemail');
+        loadSummernoteWithLang (){
+            if (this.summernoteInit){
+                return;
+            }
+            if (wiki.locale == "en"){
+                this.loadSummernote({});
+            } else {
+                let langName = wiki.locale.toLowerCase() + '-' + wiki.locale.toUpperCase();
+                let scriptUrl = wiki.baseUrl.replace(/\?$/,"");
+                scriptUrl = scriptUrl + `tools/bazar/libs/vendor/summernote/lang/summernote-${langName}.js`;
+                // load script
+                $("body").append($('<script>').attr("src",scriptUrl));
+                this.loadSummernote({lang:langName});
+            }
+        },
+        prepareFormData(thing){
+            let formData = new FormData();
+            if (typeof thing == "object"){
+                let preForm =this.toPreFormData(thing);
+                for (const key in preForm) {
+                    formData.append(key,preForm[key]);
                 }
-                // 4 .listen error
-                xhr.onerror = () => {
-                    this.senderEmail = this.fromSlot('defaultsenderemail');
-                };
-                // 5. Send the request over the network
-                xhr.send();
-        },
-        canShow: function(entries){
-            if (typeof entries == undefined){
-                entries = this.availableEntries
             }
-            this.$nextTick(()=>this.initBsEvents());
-            return Object.keys(entries).length > 0;
+            return formData;
         },
-        initBsEvents: function(){
-            let advancedParamsContainer = $(this.$refs.advancedParams);
-            if(!this.bsEventInit && advancedParamsContainer != undefined && advancedParamsContainer.length > 0){
-                this.bsEventInit = true;
-                advancedParamsContainer.on('show.bs.collapse',()=>{this.advancedParamsVisibles = true});
-                advancedParamsContainer.on('hide.bs.collapse',()=>{this.advancedParamsVisibles = false});
+        removeFromSearchedEntries(idsToRemoveFromSearchedEntries){
+            if (idsToRemoveFromSearchedEntries.length > 0){
+                this.$set(this.root,'searchedEntries',this.root.searchedEntries.filter(e => !idsToRemoveFromSearchedEntries.includes(e.id_fiche)))
             }
         },
-        secureUpdatePreview: function(){
+        removeIdsFromUpdating(entriesIds){
+            this.updatingIds = this.updatingIds.filter((entryId)=>!entriesIds.includes(entryId));
+            this.updateAvailableEntries();
+        },
+        sanitizeString(objet,name,defaultValue){
+            return (typeof objet === "object" &&
+                objet.hasOwnProperty(name) && 
+                typeof objet[name] === "string" &&
+                objet[name].length > 0) 
+                ? objet[name]
+                : defaultValue;
+        },
+        secureUpdatePreview(){
             if (this.ready){
                 this.updatePreview(this.getContentsForUpdate(),{});
             }
         },
-        sendmail: function(){
+        sendmail(){
             if (this.sendingMail){
                 return ;
             }
@@ -474,9 +276,207 @@ let componentParams = {
                 this.sendingMail = false;
             }
         },
-        removeFromSearchedEntries: function(idsToRemoveFromSearchedEntries){
-            if (idsToRemoveFromSearchedEntries.length > 0){
-                this.$set(this.root,'searchedEntries',this.root.searchedEntries.filter(e => !idsToRemoveFromSearchedEntries.includes(e.id_fiche)))
+        toogleAddresse(event){
+            this.checkAll = false;
+            let entryId = event.target.getAttribute('name');
+            if (this.selectedAddresses.includes(entryId)){
+                this.selectedAddresses = this.selectedAddresses.filter((id)=>id!=entryId)
+            } else {
+                this.selectedAddresses.push(entryId);
+            }
+            this.updatePreview(this.getContentsForUpdate(),{});
+        },
+        toggleCheckAll(){
+            if (this.checkAll){
+                this.selectedAddresses = [];
+                this.checkAll = false;
+            } else {
+                this.selectedAddresses = Object.keys(this.availableEntries).map((key)=>{
+                    return this.availableEntries[key].id_fiche;
+                });
+                this.checkAll = true;
+            }
+            this.updatePreview(this.getContentsForUpdate(),{});
+        },
+        toPreFormData(thing,key =""){
+            let type = typeof thing;
+            switch (type) {
+                case 'boolean':
+                case 'number':
+                case 'string':
+                    return {
+                        [key]:thing
+                    };
+                case 'object':
+                    if (Object.keys(thing).length > 0){
+                        let result = {};
+                        for (const propkey in thing) {
+                            result = {
+                                ...result,
+                                ...this.toPreFormData(
+                                    thing[propkey],
+                                    (key.length == 0) ? propkey : `${key}[${propkey}]`
+                                )
+                            }
+                        }
+                        return result;
+                    } else if (thing === null) {
+                        return {
+                            [key]:null
+                        };
+                    } else {
+                        return {
+                            [key]: []
+                        };
+                    }
+                
+                case 'array':
+                    if (thing.length == 0){
+                        return {
+                            [key]: []
+                        };
+                    }
+                    let result = {};
+                    thing.forEach((val,propkey)=>{
+                        result = {
+                            ...result,
+                            ...this.toPreFormData(
+                                val,
+                                (key.length == 0) ? propkey : `${key}[${propkey}]`
+                            )
+                        }
+                    });
+                    return result;
+                default:
+                    return {
+                        [key]:null
+                    };
+            }
+        },
+        updateAvailableEntries(){
+            this.availableEntries = Object.keys(this.entries).filter((key)=>{
+                let entry = this.entries[key];
+                return entry.id_fiche && 
+                    entry.id_fiche.length > 0 && 
+                    this.cacheEntriesDisplay.hasOwnProperty(entry.id_fiche) &&
+                    this.cacheEntriesDisplay[entry.id_fiche].auth &&
+                    this.cacheEntriesDisplay[entry.id_fiche].display ;
+            }).map((key)=>this.entries[key]);
+            if (this.ready && this.canShow(this.availableEntries) && !this.summernoteInit){
+                this.$nextTick(()=>this.loadSummernoteWithLang());
+            }
+        },
+        updatePreview(contents, options){
+            if ((options.forced == undefined || !options.forced) && this.updatingPreview){
+                this.nextPreviewTobeRetrieved = true;
+                this.nextContentForPreview.push(contents);
+              } else {
+                this.updatingPreview = true;
+                let dataToSend= this.getData();
+                dataToSend.message = contents;
+                
+                // 1. Create a new XMLHttpRequest object
+                let xhr = new XMLHttpRequest();
+                // 2. Configure it: POST-request
+                xhr.open('POST',wiki.url('?api/customsendmail/preview'));
+                let data = this.prepareFormData(dataToSend);
+                // 3. Listen load
+                xhr.onload = () =>{
+                    if (xhr.status == 200){
+                        let responseDecoded = JSON.parse(xhr.response);
+                        if (typeof responseDecoded == "object"){
+                            this.htmlPreview = responseDecoded.html || "<b>Error !</b>";
+                            this.sizePreview = responseDecoded.size || "Error !";
+                        }
+                    }
+                    this.finishPreviewUpdate();
+                }
+                // 4 .listen error
+                xhr.onerror = () => {
+                    this.finishPreviewUpdate();
+                };
+                // 5. Send the request over the network
+                xhr.send(data);
+            }
+        },
+        updateSenderEmailFromLoggedUser(){
+                // 1. Create a new XMLHttpRequest object
+                let xhr = new XMLHttpRequest();
+                // 2. Configure it: POST-request
+                xhr.open('GET',wiki.url('?api/customsendmail/currentuseremail'));
+                // 3. Listen load
+                xhr.onload = () =>{
+                    if (xhr.status == 200){
+                        let responseDecoded = JSON.parse(xhr.response);
+                        if (typeof responseDecoded == "object" && responseDecoded.hasOwnProperty('email') && 
+                            responseDecoded.email.length > 0){
+                            this.senderEmail = responseDecoded.email;
+                            if (responseDecoded.hasOwnProperty('name') && responseDecoded.name.length > 0 && this.senderName.length == 0){
+                                this.senderName = responseDecoded.name;
+                            }
+                            return ;
+                        }
+                    }
+                    this.senderEmail = this.fromSlot('defaultsenderemail');
+                }
+                // 4 .listen error
+                xhr.onerror = () => {
+                    this.senderEmail = this.fromSlot('defaultsenderemail');
+                };
+                // 5. Send the request over the network
+                xhr.send();
+        },
+        updateStatus(entriesIds){
+            if (entriesIds.length>0){
+                entriesIds.forEach((entryId)=>{
+                    this.updatingIds.push(entryId);
+                });
+                // 1. Create a new XMLHttpRequest object
+                let xhr = new XMLHttpRequest();
+                // 2. Configure it: POST-request
+                xhr.open('POST',wiki.url('?api/customsendmail/filterentries'));
+                let data = this.prepareFormData({
+                    entriesIds,
+                    params: {
+                        selectmembers: this.params.selectmembers || "",
+                        selectmembersparentform: String(this.params.selectmembersparentform || "")
+                    }
+                });
+                // 3. Listen load
+                xhr.onload = () =>{
+                    if (xhr.status == 200){
+                        let responseDecoded = JSON.parse(xhr.response);
+                        if (responseDecoded && responseDecoded.hasOwnProperty('entriesIds') && Array.isArray(responseDecoded.entriesIds)){
+                            let newSelectedAddrresses = [];
+                            let idsToRemoveFromSearchedEntries = [];
+                            entriesIds.forEach((id)=>{
+                                if (!this.cacheEntriesDisplay.hasOwnProperty(id)){
+                                    this.cacheEntriesDisplay[id] = {
+                                        display: true,
+                                        auth: true
+                                    }
+                                }
+                                this.cacheEntriesDisplay[id].auth = responseDecoded.entriesIds.includes(id);
+                                if (this.cacheEntriesDisplay[id].auth){
+                                    newSelectedAddrresses.push(id);
+                                } else {
+                                    idsToRemoveFromSearchedEntries.push(id);
+                                }
+                            });
+                            if (newSelectedAddrresses.length > 0){
+                                this.selectedAddresses = [...this.selectedAddresses,...newSelectedAddrresses];
+                            }
+                            this.removeFromSearchedEntries(idsToRemoveFromSearchedEntries);
+                        }
+                    }
+                    this.removeIdsFromUpdating(entriesIds);
+                }
+                // 4 .listen error
+                xhr.onerror = () => {
+                    this.removeIdsFromUpdating(entriesIds);
+                };
+                // 5. Send the request over the network
+                xhr.send(data);
             }
         }
     },
