@@ -16,7 +16,7 @@ export default {
     },
     computed: {
         nb(){
-            return this.availableentries.filter((e)=>this.bazarsendmail.isChecked(e)).length
+            return this.availableentries.filter((e)=>this.bazarsendmail.isChecked(e)).length + (this.bazarsendmail.addSenderToContact ? 1 : 0)
         },
         pluraltext() {
             return this.bazarsendmail.fromSlot('pluralnbdesttext')

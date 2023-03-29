@@ -63,6 +63,32 @@ let componentParams = {
             this.$nextTick(()=>this.initBsEvents());
             return Object.keys(entries).length > 0;
         },
+        async fetch(url,mode = 'get',dataToSend = {}){
+            let func = (url,mode,dataToSend)=>{
+                return (mode == 'get')
+                    ? fetch(url)
+                    : this.post(url,dataToSend)
+            }
+            return await func(url,mode,dataToSend)
+                .then(async (response)=>{
+                    let json = null
+                    try {
+                        json = await response.json()
+                    } catch (error) {
+                        throw {
+                            'errorMsg': error+''
+                        }
+                    }
+                    if (response.ok && typeof json == 'object'){
+                        return json
+                    } else {
+                        throw {
+                            'errorMsg': (typeof json == "object" && 'error' in json) ? json.error : ''
+                        }
+                    }
+                })
+
+        },
         finishPreviewUpdate(){
             if (this.nextPreviewTobeRetrieved){
                 if (this.nextContentForPreview.length == 0){
@@ -178,6 +204,14 @@ let componentParams = {
                 this.loadSummernote({lang:langName});
             }
         },
+        async post(url,dataToSend){
+            return await fetch(url,
+                {
+                    method: 'POST',
+                    body: new URLSearchParams(this.prepareFormData(dataToSend)),
+                    headers: (new Headers()).append('Content-Type','application/x-www-form-urlencoded')
+                })
+        },
         prepareFormData(thing){
             let formData = new FormData();
             if (typeof thing == "object"){
@@ -210,71 +244,54 @@ let componentParams = {
                 this.updatePreview(this.getContentsForUpdate(),{});
             }
         },
-        sendmail(){
+        async sendmail(){
             if (this.sendingMail){
-                return ;
+                return
             }
             let dataToSend= this.getData();
-            dataToSend.message = this.getContentsForUpdate();
+            dataToSend.message = this.getContentsForUpdate()
             if (dataToSend.subject.length == 0 || 
                 dataToSend.senderEmail.length == 0 ||
                 dataToSend.emailfieldname.length == 0){
-                this.sendingMail = false;
-                return ;
+                this.sendingMail = false
+                return
             }
-            this.sendingMail = true;
-            if (confirm(_t('CUSTOMSENDMAIL_EMAIL_SEND'))){
-                // 1. Create a new XMLHttpRequest object
-                let xhr = new XMLHttpRequest();
-                // 2. Configure it: POST-request
-                xhr.open('POST',wiki.url('?api/customsendmail/sendmail'));
-                let data = this.prepareFormData(dataToSend);
-                // 3. Listen load
-                xhr.onload = () =>{
-                    let responseDecoded = JSON.parse(xhr.response);
-                    if (xhr.status == 200){
-                        toastMessage(
-                            _t(
-                                'CUSTOMSENDMAIL_EMAIL_SENT',
-                                {
-                                'details':(typeof responseDecoded == "object" && responseDecoded.hasOwnProperty('sent for'))
-                                    ? responseDecoded['sent for']
-                                    : ''
-                                }
-                            ),
-                            1500,
-                            'alert alert-success'
-                        );
-                    } else {
-                        toastMessage(
-                            _t('CUSTOMSENDMAIL_EMAIL_NOT_SENT',
-                                {
-                                    'errorMsg':(typeof responseDecoded == "object" && responseDecoded.hasOwnProperty('error'))
-                                        ? responseDecoded.error
-                                        : ''
-                                }
-                            ),
-                            3000,
-                            "alert alert-danger"
-                        );
-                    }
-                    this.sendingMail = false;
-                    return ;
-                }
-                // 4 .listen error
-                xhr.onerror = () => {
-                    toastMessage(
-                        _t('CUSTOMSENDMAIL_EMAIL_NOT_SENT',{'errorMsg':''}),
-                        3000,
-                        "alert alert-danger"
-                    );
-                    this.sendingMail = false;
-                };
-                // 5. Send the request over the network
-                xhr.send(data);
-            } else {
-                this.sendingMail = false;
+            this.sendingMail = true
+            if (!confirm(_t('CUSTOMSENDMAIL_EMAIL_SEND'))){
+                this.sendingMail = false
+                return
             }
+            return await this.fetch(wiki.url('?api/customsendmail/sendmail'),'post',dataToSend)
+            .finally(()=>{
+                this.sendingMail = false
+            })
+            .then((json)=>{
+                toastMessage(
+                    _t(
+                        'CUSTOMSENDMAIL_EMAIL_SENT',
+                        {
+                        'details':('sent for' in json)
+                            ? json['sent for']
+                            : ''
+                        }
+                    ),
+                    1500,
+                    'alert alert-success'
+                )
+            })
+            .catch((error)=>{
+                toastMessage(
+                    _t('CUSTOMSENDMAIL_EMAIL_NOT_SENT',
+                        {
+                            'errorMsg':(typeof error == "object" && 'errorMsg' in error)
+                                ? error.errorMsg
+                                : ''
+                        }
+                    ),
+                    3000,
+                    "alert alert-danger"
+                )
+            })
         },
         toogleAddresse(event){
             this.checkAll = false;
@@ -366,117 +383,87 @@ let componentParams = {
                 this.$nextTick(()=>this.loadSummernoteWithLang());
             }
         },
-        updatePreview(contents, options){
+        async updatePreview(contents, options){
             if ((options.forced == undefined || !options.forced) && this.updatingPreview){
-                this.nextPreviewTobeRetrieved = true;
-                this.nextContentForPreview.push(contents);
-              } else {
+                this.nextPreviewTobeRetrieved = true
+                this.nextContentForPreview.push(contents)
+                return
+            } else {
                 this.updatingPreview = true;
                 let dataToSend= this.getData();
                 dataToSend.message = contents;
-                
-                // 1. Create a new XMLHttpRequest object
-                let xhr = new XMLHttpRequest();
-                // 2. Configure it: POST-request
-                xhr.open('POST',wiki.url('?api/customsendmail/preview'));
-                let data = this.prepareFormData(dataToSend);
-                // 3. Listen load
-                xhr.onload = () =>{
-                    if (xhr.status == 200){
-                        let responseDecoded = JSON.parse(xhr.response);
-                        if (typeof responseDecoded == "object"){
-                            this.htmlPreview = responseDecoded.html || "<b>Error !</b>";
-                            this.sizePreview = responseDecoded.size || "Error !";
+                return await this.fetch(wiki.url('?api/customsendmail/preview'),'post',dataToSend)
+                    .then((json)=>{
+                        if (typeof json == "object"){
+                            this.htmlPreview = json.html || "<b>Error !</b>";
+                            this.sizePreview = json.size || "Error !";
                         }
-                    }
-                    this.finishPreviewUpdate();
-                }
-                // 4 .listen error
-                xhr.onerror = () => {
-                    this.finishPreviewUpdate();
-                };
-                // 5. Send the request over the network
-                xhr.send(data);
+                    })
+                    .catch((e)=>{/* do nothing */})
+                    .finally(()=>{
+                        this.finishPreviewUpdate()
+                    })
             }
         },
-        updateSenderEmailFromLoggedUser(){
-                // 1. Create a new XMLHttpRequest object
-                let xhr = new XMLHttpRequest();
-                // 2. Configure it: POST-request
-                xhr.open('GET',wiki.url('?api/customsendmail/currentuseremail'));
-                // 3. Listen load
-                xhr.onload = () =>{
-                    if (xhr.status == 200){
-                        let responseDecoded = JSON.parse(xhr.response);
-                        if (typeof responseDecoded == "object" && responseDecoded.hasOwnProperty('email') && 
-                            responseDecoded.email.length > 0){
-                            this.senderEmail = responseDecoded.email;
-                            if (responseDecoded.hasOwnProperty('name') && responseDecoded.name.length > 0 && this.senderName.length == 0){
-                                this.senderName = responseDecoded.name;
-                            }
-                            return ;
+        async updateSenderEmailFromLoggedUser(){
+            return await this.fetch(wiki.url('?api/customsendmail/currentuseremail'))
+                .then((json)=>{
+                    if ('email' in json && json.email.length > 0){
+                        this.senderEmail = json.email
+                        if ('name' in json && json.name.length > 0 && this.senderName.length == 0){
+                            this.senderName = json.name;
                         }
+                        return
+                    } else {
+                        throw 'email not found'
                     }
-                    this.senderEmail = this.fromSlot('defaultsenderemail');
-                }
-                // 4 .listen error
-                xhr.onerror = () => {
-                    this.senderEmail = this.fromSlot('defaultsenderemail');
-                };
-                // 5. Send the request over the network
-                xhr.send();
+                })
+                .catch((e)=>{
+                    this.senderEmail = this.fromSlot('defaultsenderemail')
+                })
         },
-        updateStatus(entriesIds){
+        async updateStatus(entriesIds){
             if (entriesIds.length>0){
                 entriesIds.forEach((entryId)=>{
                     this.updatingIds.push(entryId);
                 });
-                // 1. Create a new XMLHttpRequest object
-                let xhr = new XMLHttpRequest();
-                // 2. Configure it: POST-request
-                xhr.open('POST',wiki.url('?api/customsendmail/filterentries'));
-                let data = this.prepareFormData({
+                return await this.fetch(wiki.url('?api/customsendmail/filterentries'),'post',{
                     entriesIds,
                     params: {
                         selectmembers: this.params.selectmembers || "",
                         selectmembersparentform: String(this.params.selectmembersparentform || "")
                     }
-                });
-                // 3. Listen load
-                xhr.onload = () =>{
-                    if (xhr.status == 200){
-                        let responseDecoded = JSON.parse(xhr.response);
-                        if (responseDecoded && responseDecoded.hasOwnProperty('entriesIds') && Array.isArray(responseDecoded.entriesIds)){
-                            let newSelectedAddrresses = [];
-                            let idsToRemoveFromSearchedEntries = [];
-                            entriesIds.forEach((id)=>{
-                                if (!this.cacheEntriesDisplay.hasOwnProperty(id)){
-                                    this.cacheEntriesDisplay[id] = {
-                                        display: true,
-                                        auth: true
-                                    }
+                })
+                .then((json)=>{
+                    if ('entriesIds' in json && Array.isArray(json.entriesIds)){
+                        let newSelectedAddrresses = [];
+                        let idsToRemoveFromSearchedEntries = [];
+                        entriesIds.forEach((id)=>{
+                            if (!this.cacheEntriesDisplay.hasOwnProperty(id)){
+                                this.cacheEntriesDisplay[id] = {
+                                    display: true,
+                                    auth: true
                                 }
-                                this.cacheEntriesDisplay[id].auth = responseDecoded.entriesIds.includes(id);
-                                if (this.cacheEntriesDisplay[id].auth){
-                                    newSelectedAddrresses.push(id);
-                                } else {
-                                    idsToRemoveFromSearchedEntries.push(id);
-                                }
-                            });
-                            if (newSelectedAddrresses.length > 0){
-                                this.selectedAddresses = [...this.selectedAddresses,...newSelectedAddrresses];
                             }
-                            this.removeFromSearchedEntries(idsToRemoveFromSearchedEntries);
+                            this.cacheEntriesDisplay[id].auth = json.entriesIds.includes(id);
+                            if (this.cacheEntriesDisplay[id].auth){
+                                newSelectedAddrresses.push(id);
+                            } else {
+                                idsToRemoveFromSearchedEntries.push(id);
+                            }
+                        });
+                        if (newSelectedAddrresses.length > 0){
+                            this.selectedAddresses = [...this.selectedAddresses,...newSelectedAddrresses];
                         }
+                        this.removeFromSearchedEntries(idsToRemoveFromSearchedEntries);
+                    } else {
+                        throw 'entriesIds not found'
                     }
-                    this.removeIdsFromUpdating(entriesIds);
-                }
-                // 4 .listen error
-                xhr.onerror = () => {
-                    this.removeIdsFromUpdating(entriesIds);
-                };
-                // 5. Send the request over the network
-                xhr.send(data);
+                })
+                .catch((e)=>{/* do nothing */})
+                .finally(()=>{
+                    this.removeIdsFromUpdating(entriesIds)
+                })
             }
         }
     },
@@ -504,8 +491,9 @@ let componentParams = {
                 let idsNotInCache = newIds.filter((entryId)=>{
                     return !idsInCache.includes(entryId) && !this.updatingIds.includes(entryId);
                 });
-                this.updateStatus(idsNotInCache);
-                this.removeFromSearchedEntries(idsToRemoveFromSearchedEntries);
+                this.updateStatus(idsNotInCache).finally(()=>{
+                    this.removeFromSearchedEntries(idsToRemoveFromSearchedEntries)
+                })
             }
             this.updateAvailableEntries();
             if (typeof oldVal == "object" && Object.keys(oldVal).length != 0){
