@@ -13,7 +13,7 @@ let componentName = 'BazarSendMail';
 let isVueJS3 = (typeof Vue.createApp == "function");
 
 let componentParams = {
-    props: ['params','entries','hascontactfrom','ready','root'],
+    props: ['params','entries','hascontactfrom','ready','root','isadmin'],
     components: { SpinnerLoader},
     data: function() {
         return {
@@ -475,7 +475,7 @@ let componentParams = {
         },
         removeFromSearchedEntries: function(idsToRemoveFromSearchedEntries){
             if (idsToRemoveFromSearchedEntries.length > 0){
-                this.root.searchedEntries = this.root.searchedEntries.filter(e => !idsToRemoveFromSearchedEntries.includes(e.id_fiche));
+                this.$set(this.root,'searchedEntries',this.root.searchedEntries.filter(e => !idsToRemoveFromSearchedEntries.includes(e.id_fiche)))
             }
         }
     },
@@ -508,7 +508,7 @@ let componentParams = {
             }
             this.updateAvailableEntries();
             if (typeof oldVal == "object" && Object.keys(oldVal).length != 0){
-                this.updatePreview(this.getContentsForUpdate(),{});
+                this.secureUpdatePreview()
             }
         },
         params(){
@@ -527,10 +527,14 @@ let componentParams = {
             }
         },
         htmlPreview(){
-            this.$refs.preview.innerHTML = this.htmlPreview;
+            if ('preview' in this.$refs){
+                this.$refs.preview.innerHTML = this.htmlPreview;
+            }
         },
         sizePreview(){
-            this.$refs.previewsize.innerHTML = this.sizePreview;
+            if ('previewsize' in this.$refs){
+                this.$refs.previewsize.innerHTML = this.sizePreview;
+            }
         },
         senderName(){
             this.secureUpdatePreview();
@@ -591,6 +595,9 @@ let componentParams = {
                         </ul>
                     </div>
                     <div class="col-sm-8">
+                        <a id="return-param" href="#draft-part" class="btn btn-xs btn-secondary-2">
+                            <i class="far fa-file-alt"></i> <slot name="seedraft"/>
+                        </a>
                         <div class="form-group">
                           <label><slot name="sendername"/></label>
                           <input type="text" class="form-control" v-model="senderName" :placeholder="fromSlot('sendername')">
@@ -603,14 +610,14 @@ let componentParams = {
                           <label><slot name="defaultsubject"/></label>
                           <input type="text" class="form-control" v-model="subject" required="true" :placeholder="fromSlot('subjectplaceholder')">
                         </div>
-                        <div :id="'advanced-params-'+this.uid" class="collapse" ref="advancedParams">
-                            <div class="form-group">
-                                <label class="no-dblclick">
-                                    <input type="checkbox" @click="sendToGroup=!sendToGroup;addContactsToReplyTo=sendToGroup?addContactsToReplyTo:false" :checked="sendToGroup">
-                                    <span> <slot name="sendtogroup"/></span>
-                                </label>
-                            </div>
-                            <div class="form-group">
+                        <div :id="'advanced-params-'+this.uid" class="collapse" ref="advancedParams">`
+                            // <div class="form-group">
+                            //     <label class="no-dblclick">
+                            //         <input type="checkbox" @click="sendToGroup=!sendToGroup;addContactsToReplyTo=sendToGroup?addContactsToReplyTo:false" :checked="sendToGroup">
+                            //         <span> <slot name="sendtogroup"/></span>
+                            //     </label>
+                            // </div>
+                            +`<div class="form-group">
                                 <label class="no-dblclick">
                                     <input type="checkbox" @click="addSenderToContact=!addSenderToContact" :checked="addSenderToContact">
                                     <span> <slot name="addsendertocontact"/></span>
@@ -618,22 +625,39 @@ let componentParams = {
                             </div>
                             <div class="form-group">
                                 <label class="no-dblclick">
-                                    <input type="checkbox" @click="addSenderToReplyTo=!addSenderToReplyTo" :checked="addSenderToReplyTo" :disabled="hascontactfrom">
-                                    <span> <slot name="addsendertoreplyto"/></span>
-                                </label>
-                            </div>
-                            <slot name="hascontactfrom"/>
-                            <div class="form-group">
-                                <label class="no-dblclick">
-                                    <input type="checkbox" @click="addContactsToReplyTo=!addContactsToReplyTo" :checked="addContactsToReplyTo" :disabled="!sendToGroup">
-                                    <span> <slot name="addcontactstoreplyto"/></span>
-                                </label>
-                            </div>
-                            <div class="form-group">
-                                <label class="no-dblclick">
                                     <input type="checkbox" @click="receiveHiddenCopy=!receiveHiddenCopy" :checked="receiveHiddenCopy">
                                     <span> <slot name="receivehiddencopy"/></span>
                                 </label>
+                            </div>
+                            <div v-if="isadmin && (hascontactfrom || !sendToGroup)" class="well">
+                                <i><slot name="adminpart"/></i>
+                                <div class="form-group">
+                                    <label class="no-dblclick">
+                                        <input type="checkbox" @click="addSenderToReplyTo=!addSenderToReplyTo" :checked="addSenderToReplyTo" :disabled="hascontactfrom">
+                                        <span> <slot name="addsendertoreplyto"/></span>
+                                    </label>
+                                </div>
+                                <slot name="hascontactfrom"/>
+                                <div class="form-group">
+                                    <label class="no-dblclick">
+                                        <input type="checkbox" @click="addContactsToReplyTo=!addContactsToReplyTo" :checked="addContactsToReplyTo" :disabled="!sendToGroup">
+                                        <span> <slot name="addcontactstoreplyto"/></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div v-if="!isadmin && !hascontactfrom" class="form-group">
+                                <label class="no-dblclick">
+                                    <input type="checkbox" @click="addSenderToReplyTo=!addSenderToReplyTo" :checked="addSenderToReplyTo">
+                                    <span> <slot name="addsendertoreplyto"/></span>
+                                </label>
+                            </div>
+                            <div v-if="!isadmin && sendToGroup" class="form-group">
+                                <div class="form-group">
+                                    <label class="no-dblclick">
+                                        <input type="checkbox" @click="addContactsToReplyTo=!addContactsToReplyTo" :checked="addContactsToReplyTo">
+                                        <span> <slot name="addcontactstoreplyto"/></span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                         <button type="button" class="btn btn-default btn-xs" data-toggle="collapse" :data-target="'#advanced-params-'+this.uid">
@@ -648,12 +672,15 @@ let componentParams = {
                         </button>
                         <br/>
                         <slot name="hascontactfrom"/>
-                        <div class="form-group well" style="min-height:300px;width:100%;">
+                        <div id="draft-part" class="form-group well" style="min-height:300px;width:100%;">
                             <label><slot name="preview"/></label><br>
                             <i><slot name="previewsize"/> <span ref="previewsize"></span></i>
                             <hr/>
                             <div ref="preview"></div>
                         </div>
+                        <a href="#return-param" class="btn btn-xs btn-secondary-2">
+                            <i class="fas fa-wrench"></i> <slot name="returnparam"/>
+                        </a>
                     </div>
                 </div>
             </form>

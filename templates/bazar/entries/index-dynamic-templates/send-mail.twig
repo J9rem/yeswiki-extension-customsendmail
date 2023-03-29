@@ -22,9 +22,14 @@
   {% if param.selectmembers is empty and not hasAcl("+") %}
     {{ include("@templates/alert-message.twig",{type:"danger",message:"Template '#{_self}': " ~ _t('BAZ_NEED_ADMIN_RIGHTS')})}}
   {% else %}
-    <Bazar-Send-Mail :params="params" :entries="entriesToDisplay" :ready="ready" :hascontactfrom="{{ (config.contact_from is not empty)|json_encode }}" :root="$root">
-      <template #title>{{ params.title|trim is not empty ? params.title : _t('CUSTOMSENDMAIL_DEFAULT_TITLE') }}</template>
+    <Bazar-Send-Mail :params="params" :entries="entriesToDisplay" :ready="ready" :hascontactfrom="{{ (config.contact_from is not empty)|json_encode }}" :root="$root" :isadmin="{{ hasAcl("@admins")|json_encode }}">
+      <template #addcontactstoreplyto>{{ _t('CUSTOMSENDMAIL_ADDCONTACTSTOREPLYTO') }}</template>
+      <template #addsendertocontact>{{ _t('CUSTOMSENDMAIL_ADDSENDERTOCONTACT') }}</template>
+      <template #addsendertoreplyto>{{ _t('CUSTOMSENDMAIL_ADDSENDERTOREPLYTO') }}</template>
+      <template #adminpart>{{ _t('CUSTOMSENDMAIL_ADMINPART') }}</template>
       <template #checkall>{{ _t('BAZAR_CHECKALL') }}</template>
+      <template #defaultsenderemail>{{ (hasAcl("@admins") and config['default-sender-email'])? config['default-sender-email'] : "" }}</template>
+      <template #defaultsubject>{{ _t('CUSTOMSENDMAIL_MESSAGE_SUBJECT') }}</template>
       <template #hascontactfrom>
         {% if config.contact_from is not empty %}
           <div class="form-group">
@@ -32,17 +37,19 @@
           </div>
         {% endif %}
       </template>
-      <template #sendername>{{ _t('CUSTOMSENDMAIL_SENDERNAME') }}</template>
-      <template #senderemail>{{ _t('CUSTOMSENDMAIL_SENDEREMAIL') }}</template>
-      <template #defaultsenderemail>{{ (hasAcl("@admins") and config['default-sender-email'])? config['default-sender-email'] : "" }}</template>
-      <template #defaultsubject>{{ _t('CUSTOMSENDMAIL_MESSAGE_SUBJECT') }}</template>
-      <template #subjectplaceholder>{{ _t('CUSTOMSENDMAIL_MESSAGE_SUBJECT_PLACEHOLDER') }}</template>
-      <template #sendtogroup>{{ _t('CUSTOMSENDMAIL_SENDTOGROUP') }}</template>
-      <template #addsendertocontact>{{ _t('CUSTOMSENDMAIL_ADDSENDERTOCONTACT') }}</template>
-      <template #addsendertoreplyto>{{ _t('CUSTOMSENDMAIL_ADDSENDERTOREPLYTO') }}</template>
-      <template #addcontactstoreplyto>{{ _t('CUSTOMSENDMAIL_ADDCONTACTSTOREPLYTO') }}</template>
-      <template #receivehiddencopy>{{ _t('CUSTOMSENDMAIL_RECEIVEHIDDENCOPY') }}</template>
       <template #help>{{ _t('CUSTOMSENDMAIL_HELP')|nl2br }}</template>
+      <template #hide><span class="fas fa-angle-up"></span> {{ _t('CUSTOMSENDMAIL_HIDE') }}</template>
+      <template #preview>{{ _t('CUSTOMSENDMAIL_PREVIEW') }}</template>
+      <template #previewsize>{{ _t('CUSTOMSENDMAIL_SIZE') }}</template>
+      <template #receivehiddencopy>{{ _t('CUSTOMSENDMAIL_RECEIVEHIDDENCOPY') }}</template>
+      <template #returnparam>{{ _t('CUSTOMSENDMAIL_RETURN_PARAM') }}</template>
+      <template #see><span class="fas fa-angle-down"></span> {{ _t('CUSTOMSENDMAIL_SEE') }}</template>
+      <template #seedraft>{{ _t('CUSTOMSENDMAIL_SEE_DRAFT') }}</template>
+      <template #senderemail>{{ _t('CUSTOMSENDMAIL_SENDEREMAIL') }}</template>
+      <template #sendername>{{ _t('CUSTOMSENDMAIL_SENDERNAME') }}</template>
+      <template #sendmail>{{ _t('CUSTOMSENDMAIL_SENDMAIL') }}</template>
+      <template #sendtogroup>{{ _t('CUSTOMSENDMAIL_SENDTOGROUP') }}</template>
+      <template #subjectplaceholder>{{ _t('CUSTOMSENDMAIL_MESSAGE_SUBJECT_PLACEHOLDER') }}</template>
       <template #textarea>{{ include("@bazar/inputs/textarea.twig",{
             field: {
               label: _t('CUSTOMSENDMAIL_MESSAGE'),
@@ -56,11 +63,7 @@
               :_t('CUSTOMSENDMAIL_SENDMAIL_DEFAULTCONTENT'))|raw ,
           }) }}
       </template>
-      <template #sendmail>{{ _t('CUSTOMSENDMAIL_SENDMAIL') }}</template>
-      <template #preview>{{ _t('CUSTOMSENDMAIL_PREVIEW') }}</template>
-      <template #previewsize>{{ _t('CUSTOMSENDMAIL_SIZE') }}</template>
-      <template #see><span class="fas fa-angle-down"></span> {{ _t('CUSTOMSENDMAIL_SEE') }}</template>
-      <template #hide><span class="fas fa-angle-up"></span> {{ _t('CUSTOMSENDMAIL_HIDE') }}</template>
+      <template #title>{{ params.title|trim is not empty ? params.title : _t('CUSTOMSENDMAIL_DEFAULT_TITLE') }}</template>
     </Bazar-Send-Mail>
   {% endif %}
 {% endblock %}

@@ -62,7 +62,7 @@ return [
     'CUSTOMSENDMAIL_SIZE' => 'Size :',
     'CUSTOMSENDMAIL_ADDSENDERTOCONTACT' => 'Add sender in addresses',
     'CUSTOMSENDMAIL_ADDSENDERTOREPLYTO' => 'Add sender in "Reply to"',
-    'CUSTOMSENDMAIL_ADDCONTACTSTOREPLYTO' => 'Add addresses in "Reply to" (only for group sending)',
+    'CUSTOMSENDMAIL_ADDCONTACTSTOREPLYTO' => 'Force "Reply to all" (only for group sending)',
     'CUSTOMSENDMAIL_RECEIVEHIDDENCOPY' => 'Receive a hidden copy',
     'CUSTOMSENDMAIL_SENDTOGROUP' => 'Send a group email (everyone sees the complete list of addresses)',
     'CUSTOMSENDMAIL_HASCONTACTFROM' => "Warning this wiki forces sender to %{forcedFrom}\n".
@@ -70,4 +70,7 @@ return [
     'CUSTOMSENDMAIL_SECURITY_HIDDEN' => 'hidden by security',
     'CUSTOMSENDMAIL_SEE' => 'See advanced parameters',
     'CUSTOMSENDMAIL_HIDE' => 'Hide advanced parameters',
+    'CUSTOMSENDMAIL_ADMINPART' => 'Only visible by admins',
+    'CUSTOMSENDMAIL_SEE_DRAFT' => 'See draft',
+    'CUSTOMSENDMAIL_RETURN_PARAM' => 'Return to parameters',
 ];
