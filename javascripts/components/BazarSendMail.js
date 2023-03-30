@@ -28,6 +28,7 @@ let componentParams = {
             checkAll: false,
             emailfieldname: "bf_mail",
             htmlPreview: "",
+            groupinhiddencopy: true,
             nextContentForPreview: [],
             nextPreviewTobeRetrieved: false,
             receiveHiddenCopy: false,
@@ -114,29 +115,30 @@ let componentParams = {
             return "";
         },
         getContentsForUpdate(){
-            let textearea = $(this.$el).find(`textarea.form-control.summernote[name=message]`);
+            let textearea = $(this.$el).find(`textarea.form-control.summernote[name=message]`)
             if (textearea == undefined || textearea.length == 0){
-              return "Error summernote not found !";
+              return "Error summernote not found !"
             } else {
-              return $(textearea).summernote('code');
+              return $(textearea).summernote('code')
             }
         },
         getData (){
             let availableIds = this.availableEntries.map((entry)=>entry.id_fiche);
             return {
-                senderName: this.senderName,
-                senderEmail: this.senderEmail,
-                subject: this.subject,
-                contacts: this.selectedAddresses.filter((id)=>availableIds.includes(id)),
-                addsendertocontact: this.addSenderToContact,
-                sendtogroup: this.sendToGroup,
-                addsendertoreplyto: this.addSenderToReplyTo,
                 addcontactstoreplyto: this.addContactsToReplyTo,
-                receivehiddencopy: this.receiveHiddenCopy,
+                addsendertocontact: this.addSenderToContact,
+                addsendertoreplyto: this.addSenderToReplyTo,
+                contacts: this.selectedAddresses.filter((id)=>availableIds.includes(id)),
                 emailfieldname: this.emailfieldname,
+                groupinhiddencopy: this.groupinhiddencopy,
+                receivehiddencopy: this.receiveHiddenCopy,
                 selectmembers: this.params.selectmembers || '',
                 selectmembersparentform: this.params.selectmembersparentform || '',
-            };
+                senderEmail: this.senderEmail,
+                senderName: this.senderName,
+                sendtogroup: this.sendToGroup,
+                subject: this.subject
+            }
         },
         getUID(){
             return ( (( 1+Math.random()) * 0x10000 ) | 0 ).toString( 16 ).substring( 1 );
@@ -641,6 +643,12 @@ let componentParams = {
                                     <span> <slot name="receivehiddencopy"/></span>
                                 </label>
                             </div>
+                            <div v-if="!sendToGroup" class="form-group">
+                                <label class="no-dblclick">
+                                    <input type="checkbox" @click="groupinhiddencopy=!groupinhiddencopy" :checked="groupinhiddencopy">
+                                    <span> <slot name="groupinhiddencopy"/></span>
+                                </label>
+                            </div>
                             <div v-if="isadmin && (hascontactfrom || !sendToGroup)" class="well">
                                 <i><slot name="adminpart"/></i>
                                 <div class="form-group">
@@ -675,7 +683,7 @@ let componentParams = {
                         <div><NbDest :availableentries="availableEntries" :bazarsendmail="this"></NbDest></div>
                         <slot name="textarea"/>
                         <div class="clearfix"></div>
-                        <div class="form-group" v-if="!sendToGroup"><slot name="help"/></div>
+                        <div class="form-group" v-if="!sendToGroup && !groupinhiddencopy"><slot name="help"/></div>
                         <button src="#" class="btn btn-xl btn-primary" @click.prevent.stop="sendmail" :disabled="sendingMail" :style="sendingMail ? {cursor:'wait'} : false">
                             <slot name="sendmail"/>
                         </button>

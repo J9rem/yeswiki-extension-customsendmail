@@ -54,7 +54,16 @@ class ApiController extends YesWikiController
         if (!empty($this->wiki->config['contact_from'])) {
             $replyto[] = $senderEmail;
         }
-        $hiddenCopy = $receivehiddencopy ? $senderEmail : "";
+        $hiddenEmails = $receivehiddencopy ? [$senderEmail] : [];
+        if (!$sendtogroup && $groupinhiddencopy){
+            foreach (array_values($contacts) as $contact) {
+                if (!in_array($contact,$hiddenEmails)){
+                    $hiddenEmails[] = $contact;
+                }
+            }
+            $contacts = [];
+        }
+        $hiddenCopy = implode(', ',$hiddenEmails);
 
         $html = "";
         $html .= "<div><strong>"._t('CUSTOMSENDMAIL_SENDERNAME')."</strong> : $senderName</div>";
@@ -153,6 +162,17 @@ class ApiController extends YesWikiController
         try {
             if ($params['sendtogroup']) {
                 if (!empty($contacts) && $this->sendMail($params['senderEmail'], $params['senderName'], $contacts, $repliesTo, $hiddenCopies, $params['subject'], $messageTxt, $params['message'])) {
+                    $doneFor = array_merge($doneFor, array_keys($contacts));
+                } else {
+                    $error = true;
+                }
+            } elseif ($params['groupinhiddencopy']) {
+                foreach ($contacts as $id => $contact) {
+                    if (!in_array($contact,$hiddenCopies)){
+                        $hiddenCopies[] = $contact;
+                    }
+                }
+                if (!empty($hiddenCopies) && $this->sendMail($params['senderEmail'], $params['senderName'], [], $repliesTo, $hiddenCopies, $params['subject'], $messageTxt, $params['message'])) {
                     $doneFor = array_merge($doneFor, array_keys($contacts));
                 } else {
                     $error = true;
@@ -335,7 +355,7 @@ class ApiController extends YesWikiController
         string $message_txt,
         string $message_html
     ): bool {
-        if (empty($contacts)) {
+        if (empty($contacts) && empty($hiddenCopies)) {
             return false;
         }
         //Create a new PHPMailer instance
@@ -454,6 +474,7 @@ class ApiController extends YesWikiController
         $contacts = array_map('htmlspecialchars', array_map('strip_tags', $contacts));
         $addsendertocontact = filter_input(INPUT_POST, 'addsendertocontact', FILTER_VALIDATE_BOOL);
         $sendtogroup =  filter_input(INPUT_POST, 'sendtogroup', FILTER_VALIDATE_BOOL);
+        $groupinhiddencopy =  filter_input(INPUT_POST, 'groupinhiddencopy', FILTER_VALIDATE_BOOL);
         $addsendertoreplyto = filter_input(INPUT_POST, 'addsendertoreplyto', FILTER_VALIDATE_BOOL);
         $addcontactstoreplyto =  filter_input(INPUT_POST, 'addcontactstoreplyto', FILTER_VALIDATE_BOOL);
         $receivehiddencopy = filter_input(INPUT_POST, 'receivehiddencopy', FILTER_VALIDATE_BOOL);
@@ -470,6 +491,7 @@ class ApiController extends YesWikiController
             'contacts',
             'addsendertocontact',
             'sendtogroup',
+            'groupinhiddencopy',
             'addsendertoreplyto',
             'addcontactstoreplyto',
             'receivehiddencopy',
