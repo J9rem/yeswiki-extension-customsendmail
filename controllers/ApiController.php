@@ -161,7 +161,9 @@ class ApiController extends YesWikiController
         $error = false;
         try {
             if ($params['sendtogroup']) {
-                if (!empty($contacts) && $this->sendMail($params['senderEmail'], $params['senderName'], $contacts, $repliesTo, $hiddenCopies, $params['subject'], $messageTxt, $params['message'])) {
+                $message = $this->replaceLinksGeneric($params['message'], false);
+                $messageTxt = $this->replaceLinksGeneric($messageTxt, true);
+                if (!empty($contacts) && $this->sendMail($params['senderEmail'], $params['senderName'], $contacts, $repliesTo, $hiddenCopies, $params['subject'], $messageTxt, $message)) {
                     $doneFor = array_merge($doneFor, array_keys($contacts));
                 } else {
                     $error = true;
@@ -172,7 +174,9 @@ class ApiController extends YesWikiController
                         $hiddenCopies[] = $contact;
                     }
                 }
-                if (!empty($hiddenCopies) && $this->sendMail($params['senderEmail'], $params['senderName'], [], $repliesTo, $hiddenCopies, $params['subject'], $messageTxt, $params['message'])) {
+                $message = $this->replaceLinksGeneric($params['message'], false);
+                $messageTxt = $this->replaceLinksGeneric($messageTxt, true);
+                if (!empty($hiddenCopies) && $this->sendMail($params['senderEmail'], $params['senderName'], [], $repliesTo, $hiddenCopies, $params['subject'], $messageTxt, $message)) {
                     $doneFor = array_merge($doneFor, array_keys($contacts));
                 } else {
                     $error = true;
@@ -500,6 +504,29 @@ class ApiController extends YesWikiController
         ]);
     }
 
+    private function replaceLinksGeneric(string $message, bool $modeTxt = false): string
+    {
+        $params = $this->wiki->services->get(ParameterBagInterface::class);
+        $output = $message;
+        $output = str_replace(
+            ['{baseUrl}'],
+            [$params->get('base_url')],
+            $output
+        );
+        if (preg_match_all('/\[([^\]]+)\]\(([^\)]+)\)/',$output,$matches)){
+            foreach($matches[0] as $idx => $match){
+                $output = str_replace(
+                    $match,
+                    ($modeTxt)
+                    ? "{$matches[1][$idx]} ({$matches[2][$idx]})"
+                    : "<a href=\"{$matches[2][$idx]}\">{$matches[1][$idx]}</a>",
+                    $output
+                );
+            }
+        }
+        return $output;
+    }
+
     private function replaceLinks(string $message, bool $sendtogroup, string $entryId, bool $modeTxt = false): string
     {
         $output = $message;
@@ -514,13 +541,14 @@ class ApiController extends YesWikiController
             $link = $this->wiki->Href('', $entryId);
             $editLink = $this->wiki->Href('edit', $entryId);
             $output = str_replace(
-                ['{entryLink}','{entryLinkWithTitle}','{entryEditLink}','{entryEditLinkWithText}','{entryLinkWithText}'],
+                ['{entryId}','{entryLink}','{entryLinkWithTitle}','{entryEditLink}','{entryEditLinkWithText}','{entryLinkWithText}'],
                 ($modeTxt)
-                ? [$link,"$title ($link)",$editLink, _t('BAZ_MODIFIER_LA_FICHE'). " \"$title\" ($editLink)",_t('BAZ_SEE_ENTRY'). " \"$title\" ($link)"]
-                : ["<a href=\"$link\" title=\"$title\" target=\"blank\">$link</a>","<a href=\"$link\" target=\"blank\">$title</a>","<a href=\"$editLink\" target=\"blank\">$editLink</a>","<a href=\"$editLink\" target=\"blank\">"._t('BAZ_MODIFIER_LA_FICHE'). " \"$title\"</a>","<a href=\"$link\" target=\"blank\">"._t('BAZ_SEE_ENTRY'). " \"$title\"</a>"],
+                ? [$entryId,$link,"$title ($link)",$editLink, _t('BAZ_MODIFIER_LA_FICHE'). " \"$title\" ($editLink)",_t('BAZ_SEE_ENTRY'). " \"$title\" ($link)"]
+                : [$entryId,"<a href=\"$link\" title=\"$title\" target=\"blank\">$link</a>","<a href=\"$link\" target=\"blank\">$title</a>","<a href=\"$editLink\" target=\"blank\">$editLink</a>","<a href=\"$editLink\" target=\"blank\">"._t('BAZ_MODIFIER_LA_FICHE'). " \"$title\"</a>","<a href=\"$link\" target=\"blank\">"._t('BAZ_SEE_ENTRY'). " \"$title\"</a>"],
                 $output
             );
         }
+        $output = $this->replaceLinksGeneric($output, $modeTxt);
         return $output;
     }
 

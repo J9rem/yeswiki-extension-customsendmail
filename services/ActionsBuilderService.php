@@ -95,6 +95,14 @@ trait ActionsBuilderServiceCommon
                                 'label' => _t('CUSTOMSENDMAIL_SENDMAIL_SENDTOGROUPDEFAULT_LABEL'),
                                 'type' => 'checkbox',
                                 'default' => 'false'
+                            ],
+                            'groupinhiddencopydefault' => [
+                                'label' => _t('CUSTOMSENDMAIL_SENDMAIL_GROUP_IN_HIDDIN_COPY_LABEL'),
+                                'type' => 'checkbox',
+                                'default' => 'true',
+                                'showif' => [
+                                    'sendtogroupdefault' => false
+                                ]
                             ]
                         ],
                     ];

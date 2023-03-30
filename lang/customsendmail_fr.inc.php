@@ -32,24 +32,24 @@ return [
     'CUSTOMSENDMAIL_REPLYTO' => 'Répondre à',
     'CUSTOMSENDMAIL_HIDDENCOPY' => 'Copie cachée à',
     // docs/actions/bazarliste.yaml via templates/aceditor/actions-builder.tpl.html
-    'CUSTOMSENDMAIL_SENDMAIL_DESCRIPTION' => 'Permet d\'envoyer des e-mails à un groupe de personnes',
+    'AB_BAZARTABLEAU_WITH_EMAIL_LABEL' => 'Tableau avec e-mails',
+    'CUSTOMSENDMAIL_SENDMAIL_DEFAULTCONTENT' => 'Bonjour,<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;----Complétez votre message ici----<br/>',
+    'CUSTOMSENDMAIL_SENDMAIL_DEFAULTCONTENT_LABEL' => 'Contenu par défaut',
     'CUSTOMSENDMAIL_SENDMAIL_DEFAULT_SENDERNAME_LABEL' => 'Nom d\'expéditeur par défaut',
     'CUSTOMSENDMAIL_SENDMAIL_DEFAULT_SUBJECT_LABEL' => 'Sujet par défaut',
-    'CUSTOMSENDMAIL_SENDMAIL_LABEL' => 'Envoyer des e-mails',
-    'CUSTOMSENDMAIL_SENDMAIL_TITLE_LABEL' => 'Titre',
-    'CUSTOMSENDMAIL_SENDMAIL_TITLE_EMPTY_LABEL' => 'Vide = \'%{emptyVal}\'',
+    'CUSTOMSENDMAIL_SENDMAIL_DESCRIPTION' => 'Permet d\'envoyer des e-mails à un groupe de personnes',
     'CUSTOMSENDMAIL_SENDMAIL_EMAILFIELDNAME_LABEL' => 'Champ pour l\'email',
-    'CUSTOMSENDMAIL_SENDMAIL_DEFAULTCONTENT_LABEL' => 'Contenu par défaut',
-    'CUSTOMSENDMAIL_SENDMAIL_DEFAULTCONTENT' => 'Bonjour,<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;----Complétez votre message ici----<br/>',
-    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_LABEL' => 'Filtrer les fiches',
-    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_HINT' => 'Filtre à partir des fiches mères (structures) où je suis administrateur',
-    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_ONLY_MEMBERS' => 'Uniquement les membres',
-    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_BY_AREA' => 'Membres ET profils de la zone géographique',
+    'CUSTOMSENDMAIL_SENDMAIL_GROUP_IN_HIDDIN_COPY_LABEL' => 'Par défaut, envoyer en copie caché si envoi non groupé',
+    'CUSTOMSENDMAIL_SENDMAIL_LABEL' => 'Envoyer des e-mails',
     'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERSPARENT_FORM_LABEL' => 'Formulaire parent',
-    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_DISPLAY_FILTERS_LABEL' => 'Ajouter les structures d\'intérêt et le périmètre géographique
-    aux facettes',
-    'AB_BAZARTABLEAU_WITH_EMAIL_LABEL' => 'Tableau avec e-mails',
+    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_BY_AREA' => 'Membres ET profils de la zone géographique',
+    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_DISPLAY_FILTERS_LABEL' => 'Ajouter les structures d\'intérêt et le périmètre géographique aux facettes',
+    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_HINT' => 'Filtre à partir des fiches mères (structures) où je suis administrateur',
+    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_LABEL' => 'Filtrer les fiches',
+    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_ONLY_MEMBERS' => 'Uniquement les membres',
     'CUSTOMSENDMAIL_SENDMAIL_SENDTOGROUPDEFAULT_LABEL' => 'Par défaut, envoyer à tous',
+    'CUSTOMSENDMAIL_SENDMAIL_TITLE_EMPTY_LABEL' => 'Vide = \'%{emptyVal}\'',
+    'CUSTOMSENDMAIL_SENDMAIL_TITLE_LABEL' => 'Titre',
     // templates/bazar/send-mail.twig
     'CUSTOMSENDMAIL_ADDCONTACTSTOREPLYTO' => 'Forcer "Répondre à tous" (uniquement pour les envois groupés)',
     'CUSTOMSENDMAIL_ADDSENDERTOCONTACT' => 'Ajouter l\'expéditeur dans les destinataires',
@@ -61,6 +61,9 @@ return [
     'CUSTOMSENDMAIL_HASCONTACTFROM' => "Attention, ce wiki force l'expéditeur des e-mails à %{forcedFrom}\n".
         "(l'e-mail de l'expéditeur est déplacé dans \"Répondre à\")",
     'CUSTOMSENDMAIL_HELP' => "Pour les envois non groupés :\n".
+        "[text](lien) => lien href\n".
+        "{baseUrl} => lien de base du wiki\n".
+        "{entryId} => entryId\n".
         "{entryLink} => lien vers la fiche brut\n".
         "{entryLinkWithTitle} => lien vers la fiche avec son titre\n".
         "{entryLinkWithText} => lien vers la fiche avec le texte \"Voir la fiche xxx\"\n".
