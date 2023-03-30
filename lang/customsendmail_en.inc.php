@@ -57,6 +57,7 @@ return [
     'CUSTOMSENDMAIL_ADMINPART' => 'Only visible by admins',
     'CUSTOMSENDMAIL_CHECKALL' => 'Check all visible',
     'CUSTOMSENDMAIL_DEFAULT_TITLE' => 'Send an email to :',
+    'CUSTOMSENDMAIL_DONE_FOR' => 'Done for',
     'CUSTOMSENDMAIL_GROUP_IN_HIDDEN_COPY' => 'Send in hidden copy',
     'CUSTOMSENDMAIL_HASCONTACTFROM' => "Warning this wiki forces sender to %{forcedFrom}\n".
         "(sender's email is moved to \"Reply to\")",
@@ -70,6 +71,7 @@ return [
         "{entryEditLink} => raw link to edit entry\n".
         "{entryEditLinkWithText} => link to edit entry (with title \"Edit entry\")\n",
     'CUSTOMSENDMAIL_HIDE' => 'Hide advanced parameters',
+    'CUSTOMSENDMAIL_HIDE_DONE_FOR_ALL' => 'Reduce list',
     'CUSTOMSENDMAIL_LAST_UPDATE' => 'Last update : %{date}',
     'CUSTOMSENDMAIL_MESSAGE' => 'Message',
     'CUSTOMSENDMAIL_MESSAGE_SUBJECT' => 'Object of message',
@@ -85,6 +87,7 @@ return [
     'CUSTOMSENDMAIL_SENDERNAME' => 'Sender\'s name',
     'CUSTOMSENDMAIL_SENDMAIL' => 'Send email(s)',
     'CUSTOMSENDMAIL_SENDTOGROUP' => 'Send a group email (everyone sees the complete list of addresses)',
+    'CUSTOMSENDMAIL_SHOW_DONE_FOR_ALL' => 'Show the whole list',
     'CUSTOMSENDMAIL_SINGULAR_NB_DEST_TEXT' => 'Currently {nb} addresse',
     'CUSTOMSENDMAIL_SIZE' => 'Size :',
     'CUSTOMSENDMAIL_UNCHECKALL' => 'Uncheck all visible',

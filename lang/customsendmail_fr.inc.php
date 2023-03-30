@@ -57,6 +57,7 @@ return [
     'CUSTOMSENDMAIL_ADMINPART' => 'Visible uniquement par les administrateurices du site',
     'CUSTOMSENDMAIL_CHECKALL' => 'Cocher tout ce qui est visible',
     'CUSTOMSENDMAIL_DEFAULT_TITLE' => 'Envoyer un e-mail à :',
+    'CUSTOMSENDMAIL_DONE_FOR' => 'Envoyé pour',
     'CUSTOMSENDMAIL_GROUP_IN_HIDDEN_COPY' => 'Envoyer en copie cachée',
     'CUSTOMSENDMAIL_HASCONTACTFROM' => "Attention, ce wiki force l'expéditeur des e-mails à %{forcedFrom}\n".
         "(l'e-mail de l'expéditeur est déplacé dans \"Répondre à\")",
@@ -70,6 +71,7 @@ return [
         "{entryEditLink} => lien vers la modification de la fiche (brut)\n".
         "{entryEditLinkWithText} => lien vers la modification de la fiche (avec le titre \"Modifier la fiche\")\n",
     'CUSTOMSENDMAIL_HIDE' => 'Masquer les paramètres avancés',
+    'CUSTOMSENDMAIL_HIDE_DONE_FOR_ALL' => 'Réduire la liste',
     'CUSTOMSENDMAIL_LAST_UPDATE' => 'Dernière maj : %{date}',
     'CUSTOMSENDMAIL_MESSAGE' => 'Message',
     'CUSTOMSENDMAIL_MESSAGE_SUBJECT' => 'Sujet du message',
@@ -85,6 +87,7 @@ return [
     'CUSTOMSENDMAIL_SENDERNAME' => 'Nom de l\'expéditeur',
     'CUSTOMSENDMAIL_SENDMAIL' => 'Envoyer le(s) mail(s)',
     'CUSTOMSENDMAIL_SENDTOGROUP' => 'Faire un envoi groupé (tout le monde voit la liste de destinataires)',
+    'CUSTOMSENDMAIL_SHOW_DONE_FOR_ALL' => 'Montrer toute la liste',
     'CUSTOMSENDMAIL_SINGULAR_NB_DEST_TEXT' => 'Actuellement {nb} destinataire',
     'CUSTOMSENDMAIL_SIZE' => 'Taille :',
     'CUSTOMSENDMAIL_UNCHECKALL' => 'Décocher tout ce qui est visible',

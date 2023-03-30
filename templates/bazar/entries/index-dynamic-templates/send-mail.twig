@@ -30,6 +30,7 @@
       <template #checkall>{{ _t('CUSTOMSENDMAIL_CHECKALL') }}</template>
       <template #defaultsenderemail>{{ (hasAcl("@admins") and config['default-sender-email'])? config['default-sender-email'] : "" }}</template>
       <template #defaultsubject>{{ _t('CUSTOMSENDMAIL_MESSAGE_SUBJECT') }}</template>
+      <template #donefor>{{ _t('CUSTOMSENDMAIL_DONE_FOR') }}</template>
       <template #hascontactfrom>
         {% if config.contact_from is not empty %}
           <div class="form-group">
@@ -40,6 +41,7 @@
       <template #groupinhiddencopy>{{ _t('CUSTOMSENDMAIL_GROUP_IN_HIDDEN_COPY') }}</template>
       <template #help>{{ _t('CUSTOMSENDMAIL_HELP')|nl2br }}</template>
       <template #hide><span class="fas fa-angle-up"></span> {{ _t('CUSTOMSENDMAIL_HIDE') }}</template>
+      <template #hidedoneforall>{{ _t('CUSTOMSENDMAIL_HIDE_DONE_FOR_ALL') }}</template>
       <template #pluralnbdesttext>{{ _t('CUSTOMSENDMAIL_PLURAL_NB_DEST_TEXT') }}</template>
       <template #preview>{{ _t('CUSTOMSENDMAIL_PREVIEW') }}</template>
       <template #previewsize>{{ _t('CUSTOMSENDMAIL_SIZE') }}</template>
@@ -51,6 +53,7 @@
       <template #sendername>{{ _t('CUSTOMSENDMAIL_SENDERNAME') }}</template>
       <template #sendmail>{{ _t('CUSTOMSENDMAIL_SENDMAIL') }}</template>
       <template #sendtogroup>{{ _t('CUSTOMSENDMAIL_SENDTOGROUP') }}</template>
+      <template #showdoneforall>{{ _t('CUSTOMSENDMAIL_SHOW_DONE_FOR_ALL') }}</template>
       <template #singularnbdesttext>{{ _t('CUSTOMSENDMAIL_SINGULAR_NB_DEST_TEXT') }}</template>
       <template #subjectplaceholder>{{ _t('CUSTOMSENDMAIL_MESSAGE_SUBJECT_PLACEHOLDER') }}</template>
       <template #textarea>{{ include("@bazar/inputs/textarea.twig",{

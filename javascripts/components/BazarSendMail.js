@@ -9,13 +9,14 @@
 
 import SpinnerLoader from '../../../bazar/presentation/javascripts/components/SpinnerLoader.js'
 import NbDest from './nb-dest.js'
+import ProgressBar from './progress-bar.js'
 
 let componentName = 'BazarSendMail';
 let isVueJS3 = (typeof Vue.createApp == "function");
 
 let componentParams = {
     props: ['params','entries','hascontactfrom','ready','root','isadmin'],
-    components: { SpinnerLoader,NbDest},
+    components: { SpinnerLoader,NbDest,ProgressBar},
     data: function() {
         return {
             addContactsToReplyTo: false,
@@ -26,6 +27,7 @@ let componentParams = {
             bsEventInit: false,
             cacheEntriesDisplay: {},
             checkAll: false,
+            doneFor: null,
             emailfieldname: "bf_mail",
             htmlPreview: "",
             groupinhiddencopy: true,
@@ -37,6 +39,7 @@ let componentParams = {
             senderEmail: "",
             senderName: "",
             sendingMail: false,
+            showDoneForAll: false,
             sizePreview: "",
             subject: "",
             summernoteInit: false,
@@ -114,6 +117,10 @@ let componentParams = {
             }
             return "";
         },
+        getContacts(){
+            let availableIds = this.availableEntries.map((entry)=>entry.id_fiche)
+            return this.selectedAddresses.filter((id)=>availableIds.includes(id))
+        },
         getContentsForUpdate(){
             let textearea = $(this.$el).find(`textarea.form-control.summernote[name=message]`)
             if (textearea == undefined || textearea.length == 0){
@@ -123,12 +130,11 @@ let componentParams = {
             }
         },
         getData (){
-            let availableIds = this.availableEntries.map((entry)=>entry.id_fiche);
             return {
                 addcontactstoreplyto: this.addContactsToReplyTo,
                 addsendertocontact: this.addSenderToContact,
                 addsendertoreplyto: this.addSenderToReplyTo,
-                contacts: this.selectedAddresses.filter((id)=>availableIds.includes(id)),
+                contacts: this.getContacts(),
                 emailfieldname: this.emailfieldname,
                 groupinhiddencopy: this.groupinhiddencopy,
                 receivehiddencopy: this.receiveHiddenCopy,
@@ -259,6 +265,7 @@ let componentParams = {
                 return
             }
             this.sendingMail = true
+            this.doneFor = []
             if (!confirm(_t('CUSTOMSENDMAIL_EMAIL_SEND'))){
                 this.sendingMail = false
                 return
@@ -268,6 +275,13 @@ let componentParams = {
                 this.sendingMail = false
             })
             .then((json)=>{
+                if (Array.isArray(this.doneFor) && 'sent for' in json && typeof json['sent for'] === 'string'){
+                    json['sent for'].split(',').forEach((e)=>{
+                        if (!this.doneFor.includes(e)){
+                            this.doneFor.push(e)
+                        }
+                    })
+                }
                 toastMessage(
                     _t(
                         'CUSTOMSENDMAIL_EMAIL_SENT',
@@ -410,6 +424,7 @@ let componentParams = {
                 return
             } else {
                 this.updatingPreview = true;
+                this.doneFor = null
                 let dataToSend= this.getData();
                 dataToSend.message = contents;
                 return await this.fetch(wiki.url('?api/customsendmail/preview'),'post',dataToSend)
@@ -685,6 +700,27 @@ let componentParams = {
                         <slot name="textarea"/>
                         <div class="clearfix"></div>
                         <div class="form-group" v-if="!sendToGroup && !groupinhiddencopy"><slot name="help"/></div>
+                        <div v-if="Array.isArray(doneFor)">
+                            <slot name="donefor"/>
+                            <ProgressBar :donefor="doneFor" :bazarsendmail="this"></ProgressBar>
+                            <button @click.prevent.stop="showDoneForAll=!showDoneForAll" class="btn btn-xs btn-info">
+                                <slot v-if="!showDoneForAll" name="showdoneforall"/>
+                                <slot v-else name="hidedoneforall"/>
+                            </button>
+                            <ul>
+                                <template v-if="showDoneForAll">
+                                    <li v-for="name in doneFor">
+                                        {{ name }}
+                                    </li>
+                                </template>
+                                <template v-else>
+                                    <li v-for="name in doneFor.slice(0,1)">
+                                        {{ name }}
+                                    </li>
+                                    <li>...</li>
+                                </template>
+                            </ul>
+                        </div>
                         <button src="#" class="btn btn-xl btn-primary" @click.prevent.stop="sendmail" :disabled="sendingMail" :style="sendingMail ? {cursor:'wait'} : false">
                             <slot name="sendmail"/>
                         </button>
