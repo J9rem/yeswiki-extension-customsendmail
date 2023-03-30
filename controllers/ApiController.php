@@ -182,11 +182,15 @@ class ApiController extends YesWikiController
                     $error = true;
                 }
             } else {
+                $startTime = time();
                 foreach ($contacts as $id => $contact) {
                     $message = $this->replaceLinks($params['message'], false, $id == "sender-email" ? "" : $id);
                     $messageTxtReplaced = $this->replaceLinks($messageTxt, false, $id == "sender-email" ? "" : $id, true);
                     if ($this->sendMail($params['senderEmail'], $params['senderName'], [$contact], $repliesTo, $hiddenCopies, $params['subject'], $messageTxtReplaced, $message)) {
                         $doneFor[] = $id;
+                        if (time() - $startTime > 15){
+                            break;
+                        }
                     } else {
                         $error = true;
                     }

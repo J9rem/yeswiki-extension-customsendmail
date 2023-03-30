@@ -270,7 +270,7 @@ let componentParams = {
                 this.sendingMail = false
                 return
             }
-            return await this.fetch(wiki.url('?api/customsendmail/sendmail'),'post',dataToSend)
+            return await this.sendMailInternal(dataToSend)
             .finally(()=>{
                 this.sendingMail = false
             })
@@ -308,6 +308,36 @@ let componentParams = {
                     "alert alert-danger"
                 )
             })
+        },
+        async sendMailInternal(dataToSend){
+            let contactsToSend = dataToSend.contacts
+            return await this.fetch(wiki.url('?api/customsendmail/sendmail'),'post',dataToSend)
+                .then(async (json)=>{
+                    if (Array.isArray(this.doneFor) && 'sent for' in json && typeof json['sent for'] === 'string'){
+                        let currentDone = json['sent for'].split(',')
+                        currentDone.forEach((e)=>{
+                            if (!this.doneFor.includes(e)){
+                                this.doneFor.push(e)
+                            }
+                            if (contactsToSend.includes(e)){
+                                contactsToSend = contactsToSend.filter((i)=>e!=i)
+                            }
+                        })
+                        if (contactsToSend.length > 0){
+                            let newJson = await this.sendMailInternal({...dataToSend,...{contacts:contactsToSend}})
+                            let newDone = ('sent for' in newJson && typeof newJson['sent for'] === 'string')
+                                ? newJson['sent for'].split(',')
+                                : []
+                            newDone.forEach((e)=>{
+                                if (!currentDone.includes(e)){
+                                    currentDone.push(e)
+                                }
+                            })
+                            json['sent for'] = currentDone.join(',')
+                        }
+                    }
+                    return json
+                })
         },
         sortAvailableEntriesCkeckedFirst(){
             this.availableEntries.sort((a,b)=>{
