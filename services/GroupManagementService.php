@@ -37,7 +37,7 @@ if (class_exists(MainGroupManagementService::class, false)) {
         {
             $this->wiki = $wiki;
         }
-        public function getParentsWhereAdmin(array $parentsWhereOwner, array $user, string $groupSuffix, string $parentsForm): array
+        public function getParentsWhereAdmin(string $formId, string $suffix, string $loggedUserName): array
         {
             $this->triggerErrorIfNeeded();
             return [];
