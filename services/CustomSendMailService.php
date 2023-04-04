@@ -500,13 +500,13 @@ class CustomSendMailService
                 return in_array($area, $listOfAreas);
             });
 
-            // check postal code than append
+            // check postal code then append
             $areaFromPostalCode = $this->extractAreaFromPostalCode($entry);
             if (!empty($areaFromPostalCode) &&
-                in_array($areaFromPostalCode, $listOfAreas) &&
-                !in_array($areaFromPostalCode, $validatedAreas)
+                in_array(intval($areaFromPostalCode), $listOfAreas) &&
+                !in_array(intval($areaFromPostalCode), $validatedAreas)
             ) {
-                $validatedAreas[] = $areaFromPostalCode;
+                $validatedAreas[] = intval($areaFromPostalCode);
             }
 
             // save areas
@@ -578,8 +578,8 @@ class CustomSendMailService
             $departmentListName = $this->getDepartmentListName();
             if (!empty($departmentListName)) {
                 $list = $this->listManager->getOne($departmentListName);
-                if (!empty($departmentListName['label'])) {
-                    $this->departmentList = $departmentListName['label'];
+                if (!empty($list['label'])) {
+                    $this->departmentList = $list['label'];
                     return $this->departmentList;
                 }
             }
@@ -696,12 +696,12 @@ class CustomSendMailService
             $postalCode = (empty($entry[$postalCodeName]) || !is_string($entry[$postalCodeName])) ? '' : $entry[$postalCodeName];
             $postalCode = str_replace(" ", "", trim($postalCode));
             if (strlen($postalCode) === 5) {
-                $twoChars = sub_str($postalCode, 0, 2);
-                if (!empty($departmentList[$twoChars])) {
+                $twoChars = substr($postalCode, 0, 2);
+                if (!empty($departmentList[intval($twoChars)])) {
                     return $twoChars;
                 }
-                $threeChars = sub_str($postalCode, 0, 3);
-                if (!empty($departmentList[$threeChars])) {
+                $threeChars = substr($postalCode, 0, 3);
+                if (!empty($departmentList[intval($threeChars)])) {
                     return $threeChars;
                 }
             }
