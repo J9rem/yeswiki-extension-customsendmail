@@ -113,6 +113,13 @@ trait ActionsBuilderServiceCommon
                     $this->data['action_groups']['bazarliste']['actions']['bazartableauwithemail']['label'] =
                         _t('AB_BAZARTABLEAU_WITH_EMAIL_LABEL');
                     $this->data['action_groups']['bazarliste']['actions']['bazartableauwithemail']['properties']['template']['value'] = 'tableau-with-email.tpl.html';
+                    
+            
+                    if (isset($this->data['action_groups']['bazarliste']['actions']['commons']['properties']['dynamic']['showOnlyFor'])) {
+                        if (!in_array('bazartableauwithemail',$this->data['action_groups']['bazarliste']['actions']['commons']['properties']['dynamic']['showOnlyFor'])){
+                            $this->data['action_groups']['bazarliste']['actions']['commons']['properties']['dynamic']['showOnlyFor'][] = 'bazartableauwithemail';
+                        }
+                    }
                 }
                 if (isset($this->data['action_groups']['bazarliste']['actions']['commons']['properties']['showexportbuttons']['showExceptFor']) &&
                         !in_array('bazarcustomsendmail', $this->data['action_groups']['bazarliste']['actions']['commons']['properties']['showexportbuttons']['showExceptFor'])) {

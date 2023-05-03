@@ -13,6 +13,8 @@ namespace YesWiki\Customsendmail;
 
 use YesWiki\Bazar\Controller\EntryController;
 use YesWiki\Bazar\Service\EntryManager;
+use YesWiki\Core\Service\Performer;
+use YesWiki\Core\Service\TemplateEngine;
 use YesWiki\Core\YesWikiAction;
 use YesWiki\Customsendmail\Service\CustomSendMailService;
 use YesWiki\Groupmanagement\Controller\GroupController;
@@ -22,6 +24,36 @@ class __BazarListeAction extends YesWikiAction
     public function formatArguments($arg)
     {
         $newArg = [];
+        if (!empty($arg['template']) && $arg['template'] == "tableau-with-email.tpl.html" && $this->formatBoolean($arg,false,'dynamic')) {
+            if ($this->getService(TemplateEngine::class)->hasTemplate('@bazar/entries/index-dynamic-templates/table.twig')){
+                $vars = array_slice($arg,0);
+                $vars['template'] = 'table';
+                $varsCopy = array_slice($vars,0);
+                $output = '';
+                if (file_exists('tools/tabdyn/actions/__BazarListeAction.php')){
+                    $bazarListeAction = $this->getService(Performer::class)->createPerformable([
+                        'filePath' => 'tools/tabdyn/actions/__BazarListeAction.php',
+                        'baseName' => '__BazarListeAction'
+                    ],
+                    $vars,
+                    $output);
+                } elseif (file_exists('tools/bazar/actions/__BazarListeAction.php')) {
+                    $bazarListeAction = $this->getService(Performer::class)->createPerformable([
+                        'filePath' => 'tools/bazar/actions/__BazarListeAction.php',
+                        'baseName' => '__BazarListeAction'
+                    ],
+                    $vars,
+                    $output);
+                }
+                if (!is_null($bazarListeAction)){
+                    $newArg = array_merge($newArg,$bazarListeAction->formatArguments($varsCopy));
+                }
+                $newArg['template'] = 'table';
+            } else {
+                $newArg['dynamic'] = false;
+            }
+            return $newArg;
+        }
         if (!empty($arg['template']) && $arg['template'] == "send-mail") {
             $newArg['dynamic'] = true;
             $newArg['pagination'] = -1;
