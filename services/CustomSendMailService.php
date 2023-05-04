@@ -148,6 +148,32 @@ class CustomSendMailService
         }
     }
 
+    public function appendEmailIfNeeded(array $entry, array $form, string $suffix, $user, array &$entries, array $entriesIds){
+        $entryManager = $this->wiki->services->get(EntryManager::class);
+        $entryKey = array_search($entry['id_fiche'] ?? '', $entriesIds);
+        if ($entryKey !== false) {
+            foreach ($form['prepared'] as $field) {
+                $propName = $field->getPropertyName();
+                if ($field instanceof EmailField && !empty($propName)) {
+                    $fullEntry = $entryManager->getOne($entry['id_fiche'],false,null,true,true);
+                    $email = $fullEntry[$propName] ?? "";
+                    if (!isset($entries[$entryKey]['email.ids'])){
+                        $entries[$entryKey]['email.ids'] = [];
+                    }
+                    if (!in_array($propName,$entries[$entryKey]['email.ids'])){
+                        $entries[$entryKey]['email.ids'][] = $propName;
+                    }
+                    if (!empty($email) && isset($entries[$entryKey][$propName])) {
+                        $entries[$entryKey][$propName] = $email;
+                    }
+                    $entry[$propName] = $email;
+                    $entry['email.ids'] = $entries[$entryKey]['email.ids'];
+                }
+            }
+        }
+        return $entry;
+    }
+
     public function displayEmailIfAdminOfParent(array $entries, ?array $arg): array
     {
         $selectmembers = (
@@ -174,19 +200,7 @@ class CustomSendMailService
             $selectmembers,
             $selectmembersparentform,
             function (array $entry, array $form, string $suffix, $user) use (&$entries, $entriesIds) {
-                $entryKey = array_search($entry['id_fiche'] ?? '', $entriesIds);
-                if ($entryKey !== false) {
-                    foreach ($form['prepared'] as $field) {
-                        $propName = $field->getPropertyName();
-                        if ($field instanceof EmailField && !empty($propName)) {
-                            $email = $entry[$propName] ?? "";
-                            if (!empty($email) && isset($entries[$entryKey][$propName])) {
-                                $entries[$entryKey][$propName] = $email;
-                            }
-                        }
-                    }
-                }
-                return $entry;
+                return $this->appendEmailIfNeeded($entry,$form,$suffix,$user,$entries,$entriesIds);
             },
             $selectmembersdisplayfilters
         );

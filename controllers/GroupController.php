@@ -61,7 +61,9 @@ class GroupController extends YesWikiController implements EventSubscriberInterf
             !empty($_GET['selectmembersdisplayfilters']) &&
             in_array($_GET['selectmembersdisplayfilters'], [true,1,"1","true"], true)
         );
-        if (!$this->wiki->UserIsAdmin() || $selectmembersdisplayfilters) {
+        $istablewithemail = filter_input(INPUT_GET,'istablewithemail',FILTER_VALIDATE_BOOL);
+
+        if (!$this->wiki->UserIsAdmin() || $selectmembersdisplayfilters || $istablewithemail) {
             $selectmembers = (
                 !empty($_GET['selectmembers']) &&
                     is_string($_GET['selectmembers']) &&
@@ -99,7 +101,8 @@ class GroupController extends YesWikiController implements EventSubscriberInterf
                                     'selectmembers' => $selectmembers,
                                     'selectmembersparentform' => $_GET['selectmembersparentform'] ?? "",
                                     'selectmembersdisplayfilters' => $selectmembersdisplayfilters,
-                                    'id' => $_GET['idtypeannonce'] ?? ""
+                                    'id' => $_GET['idtypeannonce'] ?? "",
+                                    'istablewithemail' => $istablewithemail
                                 ]);
                                 $entriesIds = array_map(function ($entry) {
                                     return $entry['id_fiche'] ?? "";
@@ -107,6 +110,23 @@ class GroupController extends YesWikiController implements EventSubscriberInterf
                                 $contentDecoded['entries'] = array_values(array_filter($contentDecoded['entries'], function ($entry) use ($idFicheIdx, $entriesIds) {
                                     return !empty($entry[$idFicheIdx]) && in_array($entry[$idFicheIdx], $entriesIds);
                                 }));
+                                
+                                $entriesIdsCorrespondance = [];
+                                foreach ($contentDecoded['entries'] as $key => $value) {
+                                    if (!empty($value[$idFicheIdx])){
+                                        $entriesIdsCorrespondance[$value[$idFicheIdx]] = $key;
+                                    }
+                                }
+                                foreach($entries as $entry){
+                                    if (!empty($entry['id_fiche']) && !empty($entry['email.ids']) && isset($entriesIdsCorrespondance[$entry['id_fiche']])){
+                                        foreach($entry['email.ids'] as $id){
+                                            $idx = array_search($id, $fieldMapping);
+                                            if ($idx !== false && $idx > -1){
+                                                $contentDecoded['entries'][$entriesIdsCorrespondance[$entry['id_fiche']]][$idx] = $entry[$id] ?? '';
+                                            }
+                                        }
+                                    }
+                                }
                                 if ($selectmembersdisplayfilters) {
                                     $contentDecoded['fieldMapping'][] = CustomSendMailService::KEY_FOR_PARENTS;
                                     $contentDecoded['fieldMapping'][] = CustomSendMailService::KEY_FOR_AREAS;
@@ -154,8 +174,12 @@ class GroupController extends YesWikiController implements EventSubscriberInterf
             !empty($arg['selectmembersdisplayfilters']) &&
             in_array($arg['selectmembersdisplayfilters'], [true,1,"1","true"], true)
         );
+        $entriesIds = array_map(function ($entry) {
+            return $entry['id_fiche'] ?? "";
+        }, $entries);
+        
 
-        if (!empty($selectmembers) && (!$this->wiki->UserIsAdmin() || $selectmembersdisplayfilters)) {
+        if (!empty($selectmembers) && (!$this->wiki->UserIsAdmin() || $selectmembersdisplayfilters || $arg['istablewithemail'])) {
             $ids = $arg['id'] ?? null;
             if (empty($this->customSendMailService->getAdminSuffix()) || empty($ids)) {
                 return [];
@@ -171,7 +195,9 @@ class GroupController extends YesWikiController implements EventSubscriberInterf
                         true,
                         $selectmembers,
                         $selectmembersparentform,
-                        null,
+                        function (array $entry, array $form, string $suffix, $user) use (&$entries, $entriesIds) {
+                            return $this->customSendMailService->appendEmailIfNeeded($entry,$form,$suffix,$user,$entries,$entriesIds);
+                        },
                         $selectmembersdisplayfilters
                     );
                 }

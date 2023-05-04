@@ -49,6 +49,7 @@ class __BazarListeAction extends YesWikiAction
                     $newArg = array_merge($newArg,$bazarListeAction->formatArguments($varsCopy));
                 }
                 $newArg['template'] = 'table';
+                $newArg['istablewithemail'] = true;
             } else {
                 $newArg['dynamic'] = false;
             }
