@@ -30,6 +30,7 @@ class __BazarListeAction extends YesWikiAction
                 $vars['template'] = 'table';
                 $varsCopy = array_slice($vars,0);
                 $output = '';
+                $bazarListeAction = null;
                 if (file_exists('tools/tabdyn/actions/__BazarListeAction.php')){
                     $bazarListeAction = $this->getService(Performer::class)->createPerformable([
                         'filePath' => 'tools/tabdyn/actions/__BazarListeAction.php',
