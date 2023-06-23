@@ -602,7 +602,10 @@ let componentParams = {
             }
         },
         availableEntries(){
-            this.forcedNotGroupinhiddencopy = (this.availableEntries.length > this.limitForForce)
+            this.forcedNotGroupinhiddencopy = (this.getContacts().length > this.limitForForce)
+        },
+        selectedAddresses(){
+            this.forcedNotGroupinhiddencopy = (this.getContacts().length > this.limitForForce)
         },
         sizePreview(){
             if ('previewsize' in this.$refs){
