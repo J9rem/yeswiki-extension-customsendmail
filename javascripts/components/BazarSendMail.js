@@ -601,8 +601,8 @@ let componentParams = {
                 this.$refs.preview.innerHTML = this.htmlPreview;
             }
         },
-        selectedAddresses(){
-            this.forcedNotGroupinhiddencopy = (this.selectedAddresses.length > this.limitForForce)
+        availableEntries(){
+            this.forcedNotGroupinhiddencopy = (this.availableEntries.length > this.limitForForce)
         },
         sizePreview(){
             if ('previewsize' in this.$refs){
