@@ -59,6 +59,7 @@ return [
     'CUSTOMSENDMAIL_DEFAULT_TITLE' => 'Envoyer un e-mail à :',
     'CUSTOMSENDMAIL_DONE_FOR' => 'Envoyé pour',
     'CUSTOMSENDMAIL_GROUP_IN_HIDDEN_COPY' => 'Envoyer en copie cachée',
+    'CUSTOMSENDMAIL_GROUP_IN_HIDDEN_COPY_HELP' => 'Option uniquement disponible si moins de {nb} fiches sélectionnées',
     'CUSTOMSENDMAIL_HASCONTACTFROM' => "Attention, ce wiki force l'expéditeur des e-mails à %{forcedFrom}\n".
         "(l'e-mail de l'expéditeur est déplacé dans \"Répondre à\")",
     'CUSTOMSENDMAIL_HELP' => "Pour les envois non groupés :\n".

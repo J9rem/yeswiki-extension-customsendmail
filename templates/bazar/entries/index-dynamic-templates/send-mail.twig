@@ -39,6 +39,7 @@
         {% endif %}
       </template>
       <template #groupinhiddencopy>{{ _t('CUSTOMSENDMAIL_GROUP_IN_HIDDEN_COPY') }}</template>
+      <template #groupinhiddencopylimited="{nb}">&nbsp;<i>({{ ('{{ '~_t('CUSTOMSENDMAIL_GROUP_IN_HIDDEN_COPY_HELP')|json_encode ~ '.replace("{nb}",nb) }}')|raw }})</i></template>
       <template #help>{{ _t('CUSTOMSENDMAIL_HELP')|nl2br }}</template>
       <template #hide><span class="fas fa-angle-up"></span> {{ _t('CUSTOMSENDMAIL_HIDE') }}</template>
       <template #hidedoneforall>{{ _t('CUSTOMSENDMAIL_HIDE_DONE_FOR_ALL') }}</template>

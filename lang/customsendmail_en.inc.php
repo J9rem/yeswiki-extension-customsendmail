@@ -59,6 +59,7 @@ return [
     'CUSTOMSENDMAIL_DEFAULT_TITLE' => 'Send an email to :',
     'CUSTOMSENDMAIL_DONE_FOR' => 'Done for',
     'CUSTOMSENDMAIL_GROUP_IN_HIDDEN_COPY' => 'Send in hidden copy',
+    'CUSTOMSENDMAIL_GROUP_IN_HIDDEN_COPY_HELP' => 'Option only available if less than {nb} selected entries',
     'CUSTOMSENDMAIL_HASCONTACTFROM' => "Warning this wiki forces sender to %{forcedFrom}\n".
         "(sender's email is moved to \"Reply to\")",
     'CUSTOMSENDMAIL_HELP' => "For group sending:\n".

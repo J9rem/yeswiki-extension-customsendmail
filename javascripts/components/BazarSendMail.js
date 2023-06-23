@@ -29,11 +29,14 @@ let componentParams = {
             checkAll: false,
             doneFor: null,
             emailfieldname: "bf_mail",
+            forcedNotGroupinhiddencopy: false,
             htmlPreview: "",
             groupinhiddencopy: true,
+            limitForForce: 100, // parameter than force sending separated e-mails
             nextContentForPreview: [],
             nextPreviewTobeRetrieved: false,
             receiveHiddenCopy: false,
+            secureUpdatePreviewDebounce: 0,
             selectedAddresses: [],
             sendToGroup: true,
             senderEmail: "",
@@ -136,7 +139,7 @@ let componentParams = {
                 addsendertoreplyto: this.addSenderToReplyTo,
                 contacts: this.getContacts(),
                 emailfieldname: this.emailfieldname,
-                groupinhiddencopy: this.groupinhiddencopy,
+                groupinhiddencopy: this.groupinhiddencopy && !this.forcedNotGroupinhiddencopy,
                 receivehiddencopy: this.receiveHiddenCopy,
                 selectmembers: this.params.selectmembers || '',
                 selectmembersparentform: this.params.selectmembersparentform || '',
@@ -247,9 +250,21 @@ let componentParams = {
                 ? objet[name]
                 : defaultValue;
         },
-        secureUpdatePreview(){
+        secureUpdatePreview(forced = false){
             if (this.ready){
-                this.updatePreview(this.getContentsForUpdate(),{});
+                if (forced || this.secureUpdatePreviewDebounce == 0){
+                    this.secureUpdatePreviewDebounce = 1
+                    this.updatePreview(this.getContentsForUpdate(),{})
+                        .then(()=>{
+                            if (this.secureUpdatePreviewDebounce == 2){
+                                this.secureUpdatePreview(true)
+                            } else {
+                                this.secureUpdatePreviewDebounce = 0
+                            }
+                        })
+                } else {
+                    this.secureUpdatePreviewDebounce = 2
+                }
             }
         },
         async sendmail(){
@@ -586,10 +601,31 @@ let componentParams = {
                 this.$refs.preview.innerHTML = this.htmlPreview;
             }
         },
+        selectedAddresses(){
+            this.forcedNotGroupinhiddencopy = (this.selectedAddresses.length > this.limitForForce)
+        },
         sizePreview(){
             if ('previewsize' in this.$refs){
                 this.$refs.previewsize.innerHTML = this.sizePreview;
             }
+        },
+        addContactsToReplyTo(){
+            this.secureUpdatePreview();
+        },
+        addSenderToContact(){
+            this.secureUpdatePreview();
+        },
+        addSenderToReplyTo(){
+            this.secureUpdatePreview();
+        },
+        forcedNotGroupinhiddencopy(){
+            this.secureUpdatePreview();
+        },
+        groupinhiddencopy(){
+            this.secureUpdatePreview();
+        },
+        receiveHiddenCopy(){
+            this.secureUpdatePreview();
         },
         senderName(){
             this.secureUpdatePreview();
@@ -600,16 +636,7 @@ let componentParams = {
         sendToGroup(){
             this.secureUpdatePreview();
         },
-        addSenderToContact(){
-            this.secureUpdatePreview();
-        },
-        addSenderToReplyTo(){
-            this.secureUpdatePreview();
-        },
-        addContactsToReplyTo(){
-            this.secureUpdatePreview();
-        },
-        receiveHiddenCopy(){
+        subject(){
             this.secureUpdatePreview();
         }
     },
@@ -691,8 +718,8 @@ let componentParams = {
                             </div>
                             <div v-if="!sendToGroup" class="form-group">
                                 <label class="no-dblclick">
-                                    <input type="checkbox" @click="groupinhiddencopy=!groupinhiddencopy" :checked="groupinhiddencopy">
-                                    <span> <slot name="groupinhiddencopy"/></span>
+                                    <input type="checkbox" @click="groupinhiddencopy=!groupinhiddencopy" :checked="groupinhiddencopy && !forcedNotGroupinhiddencopy" :disabled="forcedNotGroupinhiddencopy">
+                                    <span> <slot name="groupinhiddencopy"/><slot v-if="forcedNotGroupinhiddencopy" name="groupinhiddencopylimited" :nb="limitForForce"/></span>
                                 </label>
                             </div>
                             <div v-if="isadmin && (hascontactfrom || !sendToGroup)" class="well">
@@ -729,7 +756,7 @@ let componentParams = {
                         <div><NbDest :availableentries="availableEntries" :bazarsendmail="this"></NbDest></div>
                         <slot name="textarea"/>
                         <div class="clearfix"></div>
-                        <div class="form-group" v-if="!sendToGroup && !groupinhiddencopy"><slot name="help"/></div>
+                        <div class="form-group" v-if="!sendToGroup && (!groupinhiddencopy || forcedNotGroupinhiddencopy)"><slot name="help"/></div>
                         <div v-if="Array.isArray(doneFor)">
                             <slot name="donefor"/>
                             <ProgressBar :donefor="doneFor" :bazarsendmail="this"></ProgressBar>
