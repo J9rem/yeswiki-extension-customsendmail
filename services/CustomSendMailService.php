@@ -331,20 +331,17 @@ class CustomSendMailService
                 $newFilters[self::KEY_FOR_AREAS] = [
                     "icon" => "",
                     "title" => _t('CUSTOMSENDMAIL_AREAS_TITLES'),
-                    "collapsed" => false,
-                    "index" => 0,
+                    "collapsed" => true,
+                    "index" => count($newFilters),
                     "list" => $areaList
                 ];
-                $index = 1;
-            } else {
-                $index = 0;
             }
             if (count($parentList) > 1){
                 $newFilters[self::KEY_FOR_PARENTS] = [
                     "icon" => "",
                     "title" => _t('CUSTOMSENDMAIL_PARENTS_TITLES'),
-                    "collapsed" => false,
-                    "index" => $index,
+                    "collapsed" => true,
+                    "index" => count($newFilters),
                     "list" => $parentList
                 ];
             }
