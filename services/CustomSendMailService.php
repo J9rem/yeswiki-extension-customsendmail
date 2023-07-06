@@ -324,6 +324,9 @@ class CustomSendMailService
                 return strcmp(mb_strtoupper($a['value'], $encoding), mb_strtoupper($b['value'], $encoding));
             });
             $newFilters = [];
+            foreach ($filters as $key => $value) {
+                $newFilters[$key] = $value;
+            }
             if (!empty($areaList)) {
                 $newFilters[self::KEY_FOR_AREAS] = [
                     "icon" => "",
@@ -344,9 +347,6 @@ class CustomSendMailService
                     "index" => $index,
                     "list" => $parentList
                 ];
-            }
-            foreach ($filters as $key => $value) {
-                $newFilters[$key] = $value;
             }
             $filters = $newFilters;
         }
