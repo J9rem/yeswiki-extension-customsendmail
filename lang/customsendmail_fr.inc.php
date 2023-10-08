@@ -12,12 +12,6 @@ return [
     // actions/__BazarListeAction.php
     'CUSTOMSENDMAIL_PARENTS_TITLES' => 'Sélectionnez une structure',
     'CUSTOMSENDMAIL_AREAS_TITLES' => 'Périmètre géographique',
-    // actions/CustomSendmailAutoupdateLinkAction.php
-    'CUSTOMSENDMAIL_AUTOUPDATE_RESERVED_TO_ADMIN' => 'Lien de mise à jour uniquement accessible aux administrateurs connectés',
-    'CUSTOMSENDMAIL_AUTOUPDATE_TEXT' => 'Créer automatique la liste %{listName}',
-    'CUSTOMSENDMAIL_AUTOUPDATE_OF_DEPARTEMENTS' => 'des départements français',
-    'CUSTOMSENDMAIL_AUTOUPDATE_OF_AREAS' => 'des régions françaises',
-    'CUSTOMSENDMAIL_AUTOUPDATE_FORM' => ', le formulaire et les fiches associant régions et départements français',
     // config.yaml
     'EDIT_CONFIG_GROUP_CUSTOMSENDMAIL' => 'Custom Sendmail - extension personnalisée',
     'EDIT_CONFIG_HINT_GROUPSADMINSSUFFIXFOREMAILS' => 'Suffix des groupes admins qui peuvent envoyer des e-mails',
