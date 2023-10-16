@@ -9,16 +9,9 @@ return [
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-    // actions/__BazarListeAction.php
-    'CUSTOMSENDMAIL_PARENTS_TITLES' => 'Interested structures',
-    'CUSTOMSENDMAIL_AREAS_TITLES' => 'Geographical scope',
     // config.yaml
     'EDIT_CONFIG_GROUP_CUSTOMSENDMAIL' => 'Custom Sendmail - custom extension',
-    'EDIT_CONFIG_HINT_GROUPSADMINSSUFFIXFOREMAILS' => 'Admins groups suffix which can send emails',
     'EDIT_CONFIG_HINT_DEFAULT-SENDER-EMAIL' => 'Default email for template "send-mail.tpl.html"',
-    'EDIT_CONFIG_HINT_AREAFIELDNAME' => 'Fieldname for validated localization for structures',
-    'EDIT_CONFIG_HINT_POSTALCODEFIELDNAME' => 'Fieldname for postal code',
-    'EDIT_CONFIG_HINT_FORMIDAREATODEPARTMENT' => 'Form id of correspondance between area and department',
     // controllers/ApiContoller.php
     'CUSTOMSENDMAIL_CONTACTEMAIL' => 'Addresses',
     'CUSTOMSENDMAIL_ONEEMAIL' => 'in one group email',
@@ -35,12 +28,6 @@ return [
     'CUSTOMSENDMAIL_SENDMAIL_EMAILFIELDNAME_LABEL' => 'Field for email',
     'CUSTOMSENDMAIL_SENDMAIL_GROUP_IN_HIDDIN_COPY_LABEL' => 'By default, send in hidden copy if not sending group',
     'CUSTOMSENDMAIL_SENDMAIL_LABEL' => 'Send emails',
-    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERSPARENT_FORM_LABEL' => 'Parent form',
-    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_BY_AREA' => 'Members AND profiles in area',
-    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_DISPLAY_FILTERS_LABEL' => 'Add structures of interest and geographical scope to filters',
-    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_HINT' => 'Filter from parent entry (structures) where I am administrator',
-    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_LABEL' => 'Filter entries',
-    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_ONLY_MEMBERS' => 'Only members',
     'CUSTOMSENDMAIL_SENDMAIL_SENDTOGROUPDEFAULT_LABEL' => 'By default, send to all',
     'CUSTOMSENDMAIL_SENDMAIL_TITLE_EMPTY_LABEL' => 'Empty = \'%{emptyVal}\'',
     'CUSTOMSENDMAIL_SENDMAIL_TITLE_LABEL' => 'Title',

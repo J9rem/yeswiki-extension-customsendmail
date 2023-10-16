@@ -1,16 +1,7 @@
 parameters:
-  GroupsAdminsSuffixForEmails: ''
   default-sender-email: ''
-  AreaFieldName: ''
-  PostalCodeFieldName: 'bf_code_postal'
-  departmentListName: 'ListeDepartementsFrancais'
-  formIdAreaToDepartment: ''
   customsendmail_editable_config_params:
-   - 'GroupsAdminsSuffixForEmails'
    - 'default-sender-email'
-   - 'AreaFieldName'
-   - 'PostalCodeFieldName'
-   - 'formIdAreaToDepartment'
 services:
   _defaults:
     autowire: true
@@ -18,23 +9,13 @@ services:
 
   YesWiki\Customsendmail\Service\:
     resource: 'services/*'
-    exclude:
-     - 'GroupManagementServiceInterface.php'
 
   # Allows to use controllers as services
   YesWiki\Customsendmail\Controller\:
     resource: 'controllers/*'
-
-  YesWiki\Customsendmail\Controller\GroupController:
-    tags:
-      - { name: yeswiki.event_subscriber }
 
   YesWiki\Customsendmail\Service\ActionsBuilderService:
     decorates: YesWiki\Aceditor\Service\ActionsBuilderService
     decoration_on_invalid: null
     arguments:
       $parentActionsBuilderService: '@.inner'
-  
-  YesWiki\Customsendmail\Service\GroupManagementService:
-    decorates: YesWiki\Groupmanagement\Service\GroupManagementService
-    decoration_on_invalid: null

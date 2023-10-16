@@ -9,16 +9,9 @@ return [
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-    // actions/__BazarListeAction.php
-    'CUSTOMSENDMAIL_PARENTS_TITLES' => 'Sélectionnez une structure',
-    'CUSTOMSENDMAIL_AREAS_TITLES' => 'Périmètre géographique',
     // config.yaml
     'EDIT_CONFIG_GROUP_CUSTOMSENDMAIL' => 'Custom Sendmail - extension personnalisée',
-    'EDIT_CONFIG_HINT_GROUPSADMINSSUFFIXFOREMAILS' => 'Suffix des groupes admins qui peuvent envoyer des e-mails',
     'EDIT_CONFIG_HINT_DEFAULT-SENDER-EMAIL' => 'E-mail par défaut pour le template "send-mail.tpl.html"',
-    'EDIT_CONFIG_HINT_AREAFIELDNAME' => 'Nom du champ avec la localisation validée pour les structures',
-    'EDIT_CONFIG_HINT_POSTALCODEFIELDNAME' => 'Nom du champ avec le code postal',
-    'EDIT_CONFIG_HINT_FORMIDAREATODEPARTMENT' => 'Numero du formulaire de correspondance entre région et département',
     // controllers/ApiContoller.php
     'CUSTOMSENDMAIL_CONTACTEMAIL' => 'Destinataire(s)',
     'CUSTOMSENDMAIL_ONEEMAIL' => 'en un seul e-mail groupé',
@@ -35,12 +28,6 @@ return [
     'CUSTOMSENDMAIL_SENDMAIL_EMAILFIELDNAME_LABEL' => 'Champ pour l\'email',
     'CUSTOMSENDMAIL_SENDMAIL_GROUP_IN_HIDDIN_COPY_LABEL' => 'Par défaut, envoyer en copie caché si envoi non groupé',
     'CUSTOMSENDMAIL_SENDMAIL_LABEL' => 'Envoyer des e-mails',
-    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERSPARENT_FORM_LABEL' => 'Formulaire parent',
-    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_BY_AREA' => 'Membres ET profils de la zone géographique',
-    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_DISPLAY_FILTERS_LABEL' => 'Ajouter les structures d\'intérêt et le périmètre géographique aux facettes',
-    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_HINT' => 'Filtre à partir des fiches mères (structures) où je suis administrateur',
-    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_LABEL' => 'Filtrer les fiches',
-    'CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_ONLY_MEMBERS' => 'Uniquement les membres',
     'CUSTOMSENDMAIL_SENDMAIL_SENDTOGROUPDEFAULT_LABEL' => 'Par défaut, envoyer à tous',
     'CUSTOMSENDMAIL_SENDMAIL_TITLE_EMPTY_LABEL' => 'Vide = \'%{emptyVal}\'',
     'CUSTOMSENDMAIL_SENDMAIL_TITLE_LABEL' => 'Titre',

@@ -125,39 +125,6 @@ trait ActionsBuilderServiceCommon
                         !in_array('bazarcustomsendmail', $this->data['action_groups']['bazarliste']['actions']['commons']['properties']['showexportbuttons']['showExceptFor'])) {
                     $this->data['action_groups']['bazarliste']['actions']['commons']['properties']['showexportbuttons']['showExceptFor'][] =  'bazarcustomsendmail';
                 }
-                if (!empty($this->wiki->config['GroupsAdminsSuffixForEmails']) &&
-                        isset($this->data['action_groups']['bazarliste']['actions']['commons']['properties'])) {
-                    $this->data['action_groups']['bazarliste']['actions']['commons']['properties']['selectmembers'] = [
-                        'label' => _t('CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_LABEL'),
-                        'hint' => _t('CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_HINT'),
-                        'type' => 'list',
-                        'default' => '',
-                        'advanced' => true,
-                        'options' => [
-                            'only_members' => _t('CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_ONLY_MEMBERS'),
-                            'members_and_profiles_in_area' => _t('CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_BY_AREA'),
-                        ],
-                    ];
-                    $this->data['action_groups']['bazarliste']['actions']['commons']['properties']['selectmembersparentform'] = [
-                        'label' => _t('CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERSPARENT_FORM_LABEL'),
-                        'type' => 'form-select',
-                        'advanced' => true,
-                        'required' => true,
-                        'min' => 1,
-                        'showif' => [
-                            'selectmembers' => 'only_members|members_and_profiles_in_area' ,
-                        ],
-                    ];
-                    $this->data['action_groups']['bazarliste']['actions']['commons']['properties']['selectmembersdisplayfilters'] = [
-                        'label' => _t('CUSTOMSENDMAIL_SENDMAIL_SELECTMEMBERS_DISPLAY_FILTERS_LABEL'),
-                        'type' => 'checkbox',
-                        'advanced' => true,
-                        'default' => "false",
-                        'checkedvalue' => "true",
-                        'uncheckedvalue' => "false",
-                        'showif' => 'selectmembers'
-                    ];
-                }
             }
             $this->wiki->AddJavascriptFile('tools/customsendmail/javascripts/actions-builder-post-update.js',true);
         }
